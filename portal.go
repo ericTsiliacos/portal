@@ -24,7 +24,7 @@ func main() {
 		AddFlag("dry-run,n", "list of commands to run side-effects free", commando.Bool, false).
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			dry, _ := flags["dry-run"].GetBool()
+			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
 			branch := branchName()
@@ -38,15 +38,7 @@ func main() {
 				fmt.Sprintf("git branch -D %s", branch),
 			}
 
-			if dry == true {
-				dryRun(commands)
-			} else {
-				style(func() {
-					run(commands, verbose)
-				})
-
-				fmt.Println("✨ Sent!")
-			}
+			runner(commands, dryRun, verbose, "✨ Sent!")
 		})
 
 	commando.
@@ -56,7 +48,7 @@ func main() {
 		AddFlag("dry-run,n", "list of commands to run side-effects free", commando.Bool, false).
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			dry, _ := flags["dry-run"].GetBool()
+			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
 			branch := branchName()
@@ -69,23 +61,27 @@ func main() {
 				fmt.Sprintf("git push origin --delete %s", branch),
 			}
 
-			if dry == true {
-				dryRun(commands)
-			} else {
-				style(func() {
-					run(commands, verbose)
-				})
-
-				fmt.Println("✨ Got it!")
-			}
+			runner(commands, dryRun, verbose, "✨ Got it!")
 		})
 
 	commando.Parse(nil)
 }
 
-type runner func()
+func runner(commands []string, dryRun bool, verbose bool, completionMessage string) {
+	if dryRun == true {
+		runDry(commands)
+	} else {
+		style(func() {
+			run(commands, verbose)
+		})
 
-func style(fn runner) {
+		fmt.Println(completionMessage)
+	}
+}
+
+type terminal func()
+
+func style(fn terminal) {
 	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
 	s.Suffix = " Coming your way..."
 	s.Start()
@@ -121,7 +117,7 @@ func execute(command string) string {
 	return string(cmdOut)
 }
 
-func dryRun(commands []string) {
+func runDry(commands []string) {
 	for _, command := range commands {
 		fmt.Println(command)
 	}
