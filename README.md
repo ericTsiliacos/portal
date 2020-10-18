@@ -1,4 +1,4 @@
-# 🌀 Portal (written in golang)
+# 🌀 Portal
 
 Usage:
 Assumsing both pairs have done `git duet <person1> <person2>`
