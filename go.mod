@@ -1,4 +1,4 @@
-module github.com/ericTsiliacos/go_portal
+module github.com/ericTsiliacos/portal
 
 go 1.15
 
