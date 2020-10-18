@@ -71,9 +71,13 @@ func runner(commands []string, dryRun bool, verbose bool, completionMessage stri
 	if dryRun == true {
 		runDry(commands)
 	} else {
-		style(func() {
+		if verbose == true {
 			run(commands, verbose)
-		})
+		} else {
+			style(func() {
+				run(commands, verbose)
+			})
+		}
 
 		fmt.Println(completionMessage)
 	}
