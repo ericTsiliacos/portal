@@ -12,4 +12,4 @@ Assumsing both pairs have done `git duet <person1> <person2>`
 - Your project is using git duet: https://github.com/git-duet/git-duet
   
 ### Installation
-`GO111MODULE=on go get -u "github.com/ericTsiliacos/go-portal"`
+`GO111MODULE=on go get -u "github.com/ericTsiliacos/go_portal"`
