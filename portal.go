@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
 	"os"
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -22,8 +24,6 @@ func main() {
 		AddFlag("dry-run,n", "list of commands to run side-effects free", commando.Bool, false).
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			fmt.Println("Coming your way...")
-
 			dry, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
@@ -41,7 +41,11 @@ func main() {
 			if dry == true {
 				dryRun(commands)
 			} else {
-				run(commands, verbose)
+				style(func() {
+					run(commands, verbose)
+				})
+
+				fmt.Println("✨ Sent!")
 			}
 		})
 
@@ -52,8 +56,6 @@ func main() {
 		AddFlag("dry-run,n", "list of commands to run side-effects free", commando.Bool, false).
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			fmt.Println("Coming your way...")
-
 			dry, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
@@ -70,11 +72,27 @@ func main() {
 			if dry == true {
 				dryRun(commands)
 			} else {
-				run(commands, verbose)
+				style(func() {
+					run(commands, verbose)
+				})
+
+				fmt.Println("✨ Got it!")
 			}
 		})
 
 	commando.Parse(nil)
+}
+
+type runner func()
+
+func style(fn runner) {
+	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
+	s.Suffix = " Coming your way..."
+	s.Start()
+
+	fn()
+
+	s.Stop()
 }
 
 func run(commands []string, verbose bool) {
