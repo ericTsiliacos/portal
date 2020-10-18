@@ -3,13 +3,13 @@
 Usage:
 Assumsing both pairs have done `git duet <person1> <person2>`
 
-- `go_portal push`: pushes local changes to a remote branch based on your git-duet pairing (ex. portal-pa-lt)
+- `portal push`: pushes local changes to a remote branch based on your git-duet pairing (ex. portal-pa-lt)
 
-- `go_portal pull`: pulls the changes at the git-duet based branch name and cleans up the temporary branch
+- `portal pull`: pulls the changes at the git-duet based branch name and cleans up the temporary branch
   
 ### Assumes
 - You have git installed
 - Your project is using git duet: https://github.com/git-duet/git-duet
   
 ### Installation
-`GO111MODULE=on go get -u "github.com/ericTsiliacos/go_portal"`
+`GO111MODULE=on go get -u "github.com/ericTsiliacos/portal"`
