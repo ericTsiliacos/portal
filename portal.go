@@ -29,6 +29,8 @@ func main() {
 
 			branch := branchName()
 
+			checkRemoteBranchExistence(branch)
+
 			commands := []string{
 				fmt.Sprintf("git checkout -b %s", branch),
 				"git add .",
@@ -68,6 +70,14 @@ func main() {
 		})
 
 	commando.Parse(nil)
+}
+
+func checkRemoteBranchExistence(branch string) {
+	remoteBranch := execute(fmt.Sprintf("git ls-remote --heads origin %s", branch))
+	if len(remoteBranch) > 0 {
+		fmt.Println(fmt.Sprintf("remote branch %s already exists", branch))
+		os.Exit(1)
+	}
 }
 
 func checkForDirtyIndex() {
