@@ -51,6 +51,8 @@ func main() {
 			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
+			checkForDirtyIndex()
+
 			branch := branchName()
 
 			commands := []string{
@@ -66,6 +68,15 @@ func main() {
 		})
 
 	commando.Parse(nil)
+}
+
+func checkForDirtyIndex() {
+	index := execute("git status --porcelain=v1")
+	indexCount := strings.Count(index, "\n")
+	if indexCount > 0 {
+		fmt.Println("git index dirty!")
+		os.Exit(1)
+	}
 }
 
 func runner(commands []string, dryRun bool, verbose bool, completionMessage string) {
