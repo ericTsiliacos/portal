@@ -12,4 +12,4 @@ Assumsing both pairs have done `git duet <person1> <person2>`
 - Your project is using git duet: https://github.com/git-duet/git-duet
   
 ### Installation
-See [Release](https://github.com/ericTsiliacos/portal/releases) for binary to download and place on your $PATH
+See [Releases](https://github.com/ericTsiliacos/portal/releases) for binary to download and place on your $PATH
