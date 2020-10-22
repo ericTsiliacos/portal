@@ -10,6 +10,7 @@ Assumsing both pairs have done `git duet <person1> <person2>`
 ### Assumes
 - You have git installed
 - Your project is using git duet: https://github.com/git-duet/git-duet
+- Both you and your pair have write access
   
 ### Installation
 See [Releases](https://github.com/ericTsiliacos/portal/releases) to download binary then place on your $PATH
