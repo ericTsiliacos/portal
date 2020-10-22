@@ -3,7 +3,7 @@
 ### Installation
 brew install erictsiliacos/tap/portal
 
-Usage:
+### Usage
 Assumsing both pairs have done `git duet <person1> <person2>`
 
 - `portal push`: pushes local changes to a remote branch based on your git-duet pairing (ex. portal-pa-lt)
