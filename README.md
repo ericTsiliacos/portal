@@ -15,3 +15,11 @@ Assumsing both pairs have done `git duet <person1> <person2>`
 - Your project is using git duet: https://github.com/git-duet/git-duet
 - Both you and your pair have write access
   
+### Bats
+Bats is a bash testing framework, used here for integration tests. This can be installed with homebrew.
+
+```brew install bats```
+
+### Testing
+
+```./bats/integration.bats```
