@@ -1,7 +1,7 @@
 # 🌀 Portal
 
 ### Installation
-brew install erictsiliacos/tap/portal
+```brew install erictsiliacos/tap/portal```
 
 ### Usage
 Assumsing both pairs have done `git duet <person1> <person2>`
