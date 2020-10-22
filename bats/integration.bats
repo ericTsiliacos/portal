@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
 setup() {
+  GOVENDOREXPERIMENT=1 go get github.com/git-duet/git-duet
+
   rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
   go build -o "$BATS_TMPDIR"
   PATH=$BATS_TMPDIR/bin:$PATH
@@ -14,7 +16,7 @@ setup() {
   git clone project clone2
 }
 
-@test "checking for dirty index before pulling" {
+@test "checks for dirty index before pulling" {
   cd clone1
   touch foo.text
   run git status --porcelain=v1
@@ -22,4 +24,17 @@ setup() {
 
   run portal pull
   [ "$output" = "git index dirty!" ]
+}
+
+@test "check for existing remote branch before pushing" {
+  cd clone1
+  git duet fp op
+  touch foo.text
+  git checkout -b portal-fp-op
+  git add .
+  git commit -m "WIP"
+  git push origin head
+
+  run portal push
+  [ "$output" = "remote branch portal-fp-op already exists" ]
 }
