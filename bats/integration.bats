@@ -1,9 +1,12 @@
 #!/usr/bin/env bats
 
 setup() {
-  GOVENDOREXPERIMENT=1 go get github.com/git-duet/git-duet
-
   rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
+
+  pushd "$BATS_TMPDIR" || exit
+  GOBIN="$BATS_TMPDIR"/bin go get github.com/git-duet/git-duet/...
+  popd
+
   go build -o "$BATS_TMPDIR"/bin/portal
   PATH=$BATS_TMPDIR/bin:$PATH
 
