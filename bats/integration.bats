@@ -5,7 +5,7 @@ setup() {
 
   pushd "$BATS_TMPDIR" || exit
   GOBIN="$BATS_TMPDIR"/bin go get github.com/git-duet/git-duet/...
-  popd
+  popd || exit
 
   go build -o "$BATS_TMPDIR"/bin/portal
   PATH=$BATS_TMPDIR/bin:$PATH
@@ -21,7 +21,7 @@ setup() {
 
 @test "push then pull example" {
   pushd clone1
-  git duet fp op
+  git-duet fp op
   touch foo.text
 
   run portal push
@@ -33,7 +33,7 @@ setup() {
   popd
 
   pushd clone2
-  git duet fp op
+  git-duet fp op
 
   run git status --porcelain=v1
   [ "$output" = "" ]
@@ -61,7 +61,7 @@ setup() {
 
 @test "check for existing remote branch before pushing" {
   cd clone1
-  git duet fp op
+  git-duet fp op
   touch foo.text
   git checkout -b portal-fp-op
   git add .
