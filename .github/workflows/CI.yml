@@ -1,4 +1,4 @@
-name: Go
+name: CI
 
 on:
   push:
@@ -19,6 +19,11 @@ jobs:
         go-version: ^1.13
       id: go
 
+    - name: Setup BATS
+      uses: mig4/setup-bats@master
+      with:
+        bats-version: 1.1.0
+
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
@@ -34,4 +39,4 @@ jobs:
       run: go build -v .
 
     - name: Test
-      run: go test -v .
+      run: bats bats/integration.bats
