@@ -32,7 +32,8 @@ setup() {
 
   git status
 
-  run portal push
+  run portal push --verbose
+  echo "$output"
   [ "$status" -eq 0 ]
 
 #  run git status --porcelain=v1
