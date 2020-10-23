@@ -27,12 +27,14 @@ setup() {
   [ "$status" -eq 0 ]
 
   cat .git/config
-  exit 1
-#  touch foo.text
-#
-#  run portal push
-#  [ "$status" -eq 0 ]
-#
+
+  touch foo.text
+
+  git status
+
+  run portal push
+  [ "$status" -eq 0 ]
+
 #  run git status --porcelain=v1
 #  [ "$output" = "" ]
 #
