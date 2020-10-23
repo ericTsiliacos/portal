@@ -16,9 +16,8 @@ jobs:
         goos: darwin
         goarch: amd64
         
-    - uses: izumin5210/action-homebrew-tap@v1
+    - uses: dawidd6/action-homebrew-bump-formula@v3
       with:
+        token: ${{secrets.TAP_GITHUB_TOKEN}}
         tap: erictsiliacos/homebrew-tap
-        token: ${{ secrets.GITHUB_TOKEN }}
-        tap-token: ${{ secrets.TAP_GITHUB_TOKEN }} # require `repo` or `public_repo` scope for the tap repository
-
+        formula: portal
