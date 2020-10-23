@@ -31,45 +31,39 @@ setup() {
 }
 
 @test "push then pull example" {
- ls "$BATS_TMPDIR"/bin
   pushd clone1
   run git-duet fp op
   [ "$status" -eq 0 ]
 
-  cat .git/config
-
   touch foo.text
 
-  git status
+  run portal push
+  [ "$status" -eq 0 ]
 
-  run portal push --verbose
+  run git status --porcelain=v1
+  [ "$output" = "" ]
+
+  popd
+
+  pushd clone2
+  run git-duet fp op
+  [ "$status" -eq 0 ]
+
+  run git status --porcelain=v1
+  [ "$output" = "" ]
+
+  run portal pull
   echo "$output"
   [ "$status" -eq 0 ]
 
-#  run git status --porcelain=v1
-#  [ "$output" = "" ]
-#
-#  popd
-#
-#  pushd clone2
-#  git-duet fp op
-#
-#  run git status --porcelain=v1
-#  [ "$output" = "" ]
-#
-#  run portal pull
-#  echo "$output"
-#  [ "$status" -eq 0 ]
-#
-#  run git status --porcelain=v1
-#  [ "$output" = "?? foo.text" ]
-#
-#  run git ls-remote --heads origin portal-fp-op
-#  [ "$output" = "" ]
+  run git status --porcelain=v1
+  [ "$output" = "?? foo.text" ]
+
+  run git ls-remote --heads origin portal-fp-op
+  [ "$output" = "" ]
 }
 
 @test "checks for dirty index before pulling" {
-  skip
   cd clone1
   touch foo.text
   run git status --porcelain=v1
@@ -80,7 +74,6 @@ setup() {
 }
 
 @test "check for existing remote branch before pushing" {
-  skip
   cd clone1
   git-duet fp op
   touch foo.text
