@@ -19,10 +19,6 @@ jobs:
         go-version: ^1.13
       id: go
 
-    - name: Set up Homebrew
-      id: set-up-homebrew
-      uses: Homebrew/actions/setup-homebrew@master
-
     - name: Setup BATS testing framework
       uses: mig4/setup-bats@v1.0.1
 
