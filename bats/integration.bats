@@ -16,8 +16,18 @@ setup() {
   cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
 
   cp -r "$BATS_TEST_DIRNAME"/project "$BATS_TMPDIR"/"$BATS_TEST_NAME"
+
   git clone project clone1
+  pushd clone1 || exit
+  git config user.name test
+  git config user.email test@local
+  popd || exit
+
   git clone project clone2
+  pushd clone2 || exit
+  git config user.name test
+  git config user.email test@local
+  popd || exit
 }
 
 @test "push then pull example" {
