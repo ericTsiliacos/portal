@@ -80,7 +80,7 @@ setup() {
   git checkout -b portal-fp-op
   git add .
   git commit -m "WIP"
-  git push origin head
+  git push -u origin head
 
   run portal push
   [ "$output" = "remote branch portal-fp-op already exists" ]
