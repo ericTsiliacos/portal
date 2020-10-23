@@ -15,3 +15,10 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: darwin
         goarch: amd64
+        
+    - uses: izumin5210/action-homebrew-tap@v1
+      with:
+        tap: erictsiliacos/homebrew-tap
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tap-token: ${{ secrets.TAP_GITHUB_TOKEN }} # require `repo` or `public_repo` scope for the tap repository
+
