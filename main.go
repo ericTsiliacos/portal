@@ -1,20 +1,78 @@
 package main
 
+import "C"
 import (
+	"errors"
 	"fmt"
 	"github.com/briandowns/spinner"
+	"github.com/manifoldco/promptui"
 	"github.com/thatisuday/commando"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
 	"os"
 	"sort"
 	"strings"
 	"time"
 )
 
+type config struct {
+	Portal struct {
+		Strategy string `yaml:"strategy"`
+	} `yaml:"Portal"`
+}
+
 func main() {
 	commando.
 		SetExecutableName("portal").
 		SetVersion("1.0.0").
 		SetDescription("A commandline tool for moving work-in-progress to and from your pair using git")
+
+	commando.
+		Register("init").
+		SetShortDescription("Initializes portal").
+		SetDescription("Initializes portal to choose a branch naming strategy").
+		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+			portal := ".portal"
+			os.Mkdir(portal, os.ModePerm)
+
+			prompt := promptui.Select{
+				Label: "Select branch name strategy",
+				Items: []string{"git-duet", "git-together"},
+			}
+
+			_, result, err := prompt.Run()
+
+			if err != nil {
+				fmt.Printf("Prompt failed %v\n", err)
+				return
+			}
+
+			configPath := portal + "/config.yml"
+
+			fmt.Printf("Your choice %q is set in %s\n", result, configPath)
+
+			f, err := os.Create(configPath)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			c := config{}
+			c.Portal.Strategy = result
+
+			d, err := yaml.Marshal(&c)
+			if err != nil {
+				log.Fatalf("error: %v", err)
+			}
+
+			_, err = f.WriteString(string(d))
+			if err != nil {
+				fmt.Println(err)
+				_ = f.Close()
+				return
+			}
+		})
 
 	commando.
 		Register("push").
@@ -26,7 +84,17 @@ func main() {
 			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
-			branch := branchName(gitDuet())
+			err, strategy := getConfigStrategy()
+			if err != nil {
+				log.Fatalf("Error: %v", err)
+			}
+
+			branchStrategy, err := branchNameStrategy(strategy)
+			if err != nil {
+				log.Fatalf("Error: %v", err)
+			}
+
+			branch := branchName(branchStrategy)
 
 			checkRemoteBranchExistence(branch)
 
@@ -54,7 +122,17 @@ func main() {
 
 			checkForDirtyIndex()
 
-			branch := branchName(gitDuet())
+			err, strategy := getConfigStrategy()
+			if err != nil {
+				log.Fatalf("Error: %v", err)
+			}
+
+			branchStrategy, err := branchNameStrategy(strategy)
+			if err != nil {
+				log.Fatalf("Error: %v", err)
+			}
+
+			branch := branchName(branchStrategy)
 
 			commands := []string{
 				"git fetch",
@@ -69,6 +147,30 @@ func main() {
 		})
 
 	commando.Parse(nil)
+}
+
+func getConfigStrategy() (error, string) {
+	yamlFile, err := ioutil.ReadFile(".portal/config.yml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+	c := &config{}
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+	}
+
+	strategy := c.Portal.Strategy
+	return err, strategy
+}
+
+func branchNameStrategy(strategy string) ([]string, error) {
+	if strategy == "git-duet" {
+		return gitDuet(), nil
+	} else if strategy == "git-together" {
+		return gitTogether(), nil
+	}
+	return nil, errors.New("branch name strategy: none found")
 }
 
 func checkRemoteBranchExistence(branch string) {
