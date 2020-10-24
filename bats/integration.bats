@@ -56,8 +56,8 @@
   [ "$output" = "remote branch portal-fp-op already exists" ]
 }
 
-load setup_project
-load setup_portal
+load "setup_project"
+load "setup_portal"
 
 setup() {
   clean_bin
@@ -91,6 +91,6 @@ email_addresses:
 EOM
   git add .
   git commit -am "Add .git-author"
-  git push origin head
+  git push origin master
   popd || exit
 }
