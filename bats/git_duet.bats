@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-@test "push then pull example" {
+@test "git-duet: push then pull example" {
   pushd clone1
   run git-duet fp op
   [ "$status" -eq 0 ]
