@@ -1,36 +1,11 @@
 #!/usr/bin/env bats
 
 @test "git-duet: push then pull example" {
-  pushd clone1
-  run git-duet fp op
-  [ "$status" -eq 0 ]
+  push "clone1"
+  pull "clone2"
 
-  touch foo.text
-
-  run portal push
-  [ "$status" -eq 0 ]
-
-  run git status --porcelain=v1
-  [ "$output" = "" ]
-
-  popd
-
-  pushd clone2
-  run git-duet fp op
-  [ "$status" -eq 0 ]
-
-  run git status --porcelain=v1
-  [ "$output" = "" ]
-
-  run portal pull
-  echo "$output"
-  [ "$status" -eq 0 ]
-
-  run git status --porcelain=v1
-  [ "$output" = "?? foo.text" ]
-
-  run git ls-remote --heads origin portal-fp-op
-  [ "$output" = "" ]
+  push "clone2"
+  pull "clone1"
 }
 
 load "helpers/repos"
