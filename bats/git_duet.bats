@@ -33,8 +33,8 @@
   [ "$output" = "" ]
 }
 
-load "setup_project"
-load "setup_portal"
+load "helpers/repos"
+load "helpers/portal"
 
 setup() {
   clean_bin
