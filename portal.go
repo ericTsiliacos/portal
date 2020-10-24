@@ -5,6 +5,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -25,7 +26,7 @@ func main() {
 			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
-			branch := portal(branchName())
+			branch := branchName(gitDuet())
 
 			checkRemoteBranchExistence(branch)
 
@@ -53,7 +54,7 @@ func main() {
 
 			checkForDirtyIndex()
 
-			branch := portal(branchName())
+			branch := branchName(gitDuet())
 
 			commands := []string{
 				"git fetch",
@@ -132,6 +133,15 @@ func runDry(commands []string) {
 	for _, command := range commands {
 		fmt.Println(command)
 	}
+}
+
+func branchName(authors []string) string {
+	sort.Strings(authors)
+	authors = Map(authors, func(s string) string {
+		return strings.TrimSuffix(s, "\n")
+	})
+	branch := strings.Join(authors, "-")
+	return portal(branch)
 }
 
 func portal(branchName string) string {
