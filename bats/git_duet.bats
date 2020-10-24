@@ -33,29 +33,6 @@
   [ "$output" = "" ]
 }
 
-@test "checks for dirty index before pulling" {
-  cd clone1
-  touch foo.text
-  run git status --porcelain=v1
-  [ "$output" = "?? foo.text" ]
-
-  run portal pull
-  [ "$output" = "git index dirty!" ]
-}
-
-@test "check for existing remote branch before pushing" {
-  cd clone1
-  git-duet fp op
-  touch foo.text
-  git checkout -b portal-fp-op
-  git add .
-  git commit -m "WIP"
-  git push -u origin portal-fp-op
-
-  run portal push
-  [ "$output" = "remote branch portal-fp-op already exists" ]
-}
-
 load "setup_project"
 load "setup_portal"
 
