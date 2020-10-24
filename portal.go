@@ -5,8 +5,6 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
 	"os"
-	"os/exec"
-	"sort"
 	"strings"
 	"time"
 )
@@ -27,7 +25,7 @@ func main() {
 			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
-			branch := branchName()
+			branch := portal(branchName())
 
 			checkRemoteBranchExistence(branch)
 
@@ -55,7 +53,7 @@ func main() {
 
 			checkForDirtyIndex()
 
-			branch := branchName()
+			branch := portal(branchName())
 
 			commands := []string{
 				"git fetch",
@@ -130,37 +128,14 @@ func run(commands []string, verbose bool) {
 	}
 }
 
-func execute(command string) string {
-	s := strings.Split(command, " ")
-	cmd, args := s[0], s[1:]
-	cmdOut, err := exec.Command(cmd, args...).Output()
-
-	if err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
-
-	return string(cmdOut)
-}
-
 func runDry(commands []string) {
 	for _, command := range commands {
 		fmt.Println(command)
 	}
 }
 
-func branchName() string {
-	author := execute("git config --get duet.env.git-author-initials")
-	coauthor := execute("git config --get duet.env.git-committer-initials")
-
-	authors := []string{author, coauthor}
-	sort.Strings(authors)
-	authors = Map(authors, func(s string) string {
-		return strings.TrimSuffix(s, "\n")
-	})
-	authors = append([]string{"portal"}, authors...)
-	branch := strings.Join(authors, "-")
-	return branch
+func portal(branchName string) string {
+	return "portal-" + branchName
 }
 
 func Map(vs []string, f func(string) string) []string {
