@@ -1,35 +1,5 @@
 #!/usr/bin/env bats
 
-setup() {
-  rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
-
-  pushd "$BATS_TMPDIR" || exit
-  GOBIN="$BATS_TMPDIR"/bin go get github.com/git-duet/git-duet/...
-  popd || exit
-
-
-  go build -o "$BATS_TMPDIR"/bin/portal
-  PATH=$BATS_TMPDIR/bin:$PATH
-
-  rm -rf "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  mkdir -p "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
-
-  cp -r "$BATS_TEST_DIRNAME"/project "$BATS_TMPDIR"/"$BATS_TEST_NAME"
-
-  git clone project clone1
-  pushd clone1 || exit
-  git config user.name test
-  git config user.email test@local
-  popd || exit
-
-  git clone project clone2
-  pushd clone2 || exit
-  git config user.name test
-  git config user.email test@local
-  popd || exit
-}
-
 @test "push then pull example" {
   pushd clone1
   run git-duet fp op
@@ -84,4 +54,43 @@ setup() {
 
   run portal push
   [ "$output" = "remote branch portal-fp-op already exists" ]
+}
+
+load setup_project.bash
+load setup_portal.bash
+
+setup() {
+  clean_bin
+  goGetGitDuet
+  setup_portal
+  clean_test
+  setup_repos
+}
+
+setup_repos() {
+  remoteRepo
+  clone1 && addGitDuet
+  clone2
+}
+
+goGetGitDuet() {
+  pushd "$BATS_TMPDIR" || exit
+  GOBIN="$BATS_TMPDIR"/bin go get github.com/git-duet/git-duet/...
+  popd || exit
+}
+
+addGitDuet() {
+  pushd clone1 || exit
+  cat > .git-authors <<- EOM
+authors:
+  fp: Fake Person; fperson
+  op: Other Person; operson
+email_addresses:
+  fp: fperson@email.com
+  op: operson@email.com
+EOM
+  git add .
+  git commit -am "Add .git-author"
+  git push origin head
+  popd || exit
 }
