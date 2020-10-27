@@ -1,5 +1,7 @@
 # 🌀 Portal
 
+Credit to George Dean (@gdean123) for the idea.
+
 ### Installation
 ```brew install erictsiliacos/tap/portal```
 
