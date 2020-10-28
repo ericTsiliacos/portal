@@ -8,8 +8,8 @@
   pull "clone1"
 }
 
-load "helpers/repos"
-load "helpers/portal"
+load "helpers/repos.bash"
+load "helpers/portal.bash"
 
 setup() {
   clean_bin
