@@ -24,4 +24,4 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 
 ### Testing
 
-```./bats/integration.bats```
+```bats ./bats```
