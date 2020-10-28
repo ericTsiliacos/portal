@@ -13,12 +13,6 @@ import (
 	"time"
 )
 
-type config struct {
-	Portal struct {
-		Strategy string `yaml:"strategy"`
-	} `yaml:"Portal"`
-}
-
 func main() {
 	commando.
 		SetExecutableName("portal").
