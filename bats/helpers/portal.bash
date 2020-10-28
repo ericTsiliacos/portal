@@ -3,18 +3,6 @@ setup_portal() {
   PATH=$BATS_TMPDIR/bin:$PATH
 }
 
-init() {
-  pushd "$1" || exit
-
-  echo -ne '\n' | portal init %2>null
-
-  git add .
-  git commit -m "Add .portal files"
-  git push origin master
-
-  popd || exit
-}
-
 push() {
   pushd "$1" || exit
 

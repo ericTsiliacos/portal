@@ -36,7 +36,7 @@ setup() {
 
 setup_repos() {
   remoteRepo
-  clone1 && addGitDuet && init "clone1"
+  clone1 && addGitDuet
   clone2
 }
 
