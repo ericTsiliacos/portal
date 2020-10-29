@@ -1,11 +1,16 @@
 #!/usr/bin/env bats
 
 @test "git-duet: push/pull" {
-  push "clone1"
-  pull "clone2"
+  add_git_duet "clone1"
 
-  push "clone2"
-  pull "clone1"
+  git_duet "clone1"
+  portal_push "clone1"
+
+  git_duet "clone2"
+  portal_pull "clone2"
+
+  portal_push "clone2"
+  portal_pull "clone1"
 }
 
 @test "validate clean index before pulling" {
@@ -19,8 +24,11 @@
 }
 
 @test "validate remote branch exists before pushing" {
+  add_git_duet "clone1"
+
+  git_duet "clone1"
+
   cd clone1
-  git-duet fp op
   touch foo.text
   git checkout -b portal-fp-op
   git add .
@@ -36,9 +44,9 @@ setup() {
   install_git_duet
   install_portal
   clean_test
-  create_remote_repo
-  clone1 && add_git_duet
-  clone2
+  create_remote_repo "project"
+  clone "project" "clone1"
+  clone "project" "clone2"
 }
 
 clean_bin() {
@@ -61,28 +69,19 @@ clean_test() {
 }
 
 create_remote_repo() {
-  mkdir project && pushd project && git init --bare && popd || exit
+  mkdir "$1" && pushd "$1" && git init --bare && popd || exit
 }
 
-clone1() {
-  git clone project clone1
-  pushd clone1 || exit
+clone() {
+  git clone "$1" "$2"
+  pushd "$2" || exit
   git config user.name test
   git config user.email test@local
-  popd || exit
-}
-
-clone2() {
-  git clone project clone2
-  pushd clone2 || exit
-  git config user.name test
-  git config user.email test@local
-  git pull -r
   popd || exit
 }
 
 add_git_duet() {
-  pushd clone1 || exit
+  pushd "$1" || exit
   cat > .git-authors <<- EOM
 authors:
   fp: Fake Person; fperson
@@ -95,13 +94,22 @@ EOM
   git commit -am "Add .git-author"
   git push origin master
   popd || exit
+
+  pushd clone2 || exit
+  git pull -r
+  popd || exit
 }
 
-push() {
+git_duet() {
   pushd "$1" || exit
 
-  run git-duet fp op
-  [ "$status" -eq 0 ]
+  git-duet fp op
+
+  popd || exit
+}
+
+portal_push() {
+  pushd "$1" || exit
 
   touch foo.text
 
@@ -114,11 +122,8 @@ push() {
   popd || exit
 }
 
-pull() {
+portal_pull() {
   pushd "$1" || exit
-
-  run git-duet fp op
-  [ "$status" -eq 0 ]
 
   run git status --porcelain=v1
   [ "$output" = "" ]
