@@ -41,9 +41,43 @@ setup() {
   clone2
 }
 
+clean_bin() {
+  rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
+}
+
 install_git_duet() {
-  pushd "$BATS_TMPDIR" || exit
-  GOBIN="$BATS_TMPDIR"/bin go get github.com/git-duet/git-duet/...
+  git-duet || brew install git-duet
+}
+
+install_portal() {
+  go build -o "$BATS_TMPDIR"/bin/portal
+  PATH=$BATS_TMPDIR/bin:$PATH
+}
+
+clean_test() {
+  rm -rf "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
+  mkdir -p "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
+  cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
+}
+
+create_remote_repo() {
+  mkdir project && pushd project && git init --bare && popd || exit
+}
+
+clone1() {
+  git clone project clone1
+  pushd clone1 || exit
+  git config user.name test
+  git config user.email test@local
+  popd || exit
+}
+
+clone2() {
+  git clone project clone2
+  pushd clone2 || exit
+  git config user.name test
+  git config user.email test@local
+  git pull -r
   popd || exit
 }
 
@@ -61,11 +95,6 @@ EOM
   git commit -am "Add .git-author"
   git push origin master
   popd || exit
-}
-
-install_portal() {
-  go build -o "$BATS_TMPDIR"/bin/portal
-  PATH=$BATS_TMPDIR/bin:$PATH
 }
 
 push() {
@@ -105,35 +134,4 @@ pull() {
   [ "$output" = "" ]
 
   popd || exit
-}
-
-create_remote_repo() {
-  mkdir project && pushd project && git init --bare && popd || exit
-}
-
-clone1() {
-  git clone project clone1
-  pushd clone1 || exit
-  git config user.name test
-  git config user.email test@local
-  popd || exit
-}
-
-clone2() {
-  git clone project clone2
-  pushd clone2 || exit
-  git config user.name test
-  git config user.email test@local
-  git pull -r
-  popd || exit
-}
-
-clean_test() {
-  rm -rf "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  mkdir -p "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
-}
-
-clean_bin() {
-  rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
 }
