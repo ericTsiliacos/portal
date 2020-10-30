@@ -14,7 +14,7 @@ Assumsing both pairs have done `git duet <person1> <person2>`
   
 ### Assumes
 - You have git installed
-- Your project is using git duet: https://github.com/git-duet/git-duet
+- Supports [git duet](https://github.com/git-duet/git-duet) and [git-together](https://github.com/kejadlen/git-together)
 - Both you and your pair have write access
   
 ### Bats
