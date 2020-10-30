@@ -15,7 +15,7 @@ Assumsing both pairs have done `git duet <person1> <person2>` or `git-together w
 ### Assumes
 - You have git installed
 - Supports [git duet](https://github.com/git-duet/git-duet) and [git-together](https://github.com/kejadlen/git-together)
-- Both you and your pair have write access
+- Both you and your pair have write access to the working repository
   
 ### Bats
 Bats is a bash testing framework, used here for integration tests. This can be installed with homebrew.
