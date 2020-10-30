@@ -8,9 +8,9 @@ Credit to George Dean (@gdean123) for the idea.
 ### Usage
 Assumsing both pairs have done `git duet <person1> <person2>` or `git-together with <person1> <person2>`
 
-- `portal push`: pushes local changes to a remote branch based on your git-duet pairing (ex. portal-pa-ir)
+- `portal push`: pushes local changes to a remote branch based on your pairing (ex. portal-pa-ir)
 
-- `portal pull`: pulls the changes at the git-duet based branch name and cleans up the temporary branch
+- `portal pull`: pulls the changes at the pair branch name and cleans up the temporary branch
   
 ### Assumes
 - You have git installed
