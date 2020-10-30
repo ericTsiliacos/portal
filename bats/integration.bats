@@ -1,12 +1,25 @@
 #!/usr/bin/env bats
 
 @test "git-duet: push/pull" {
-  add_git_duet "clone1"
+  add_git_duet "clone1" "clone2"
 
   git_duet "clone1"
   portal_push "clone1"
 
   git_duet "clone2"
+  portal_pull "clone2"
+
+  portal_push "clone2"
+  portal_pull "clone1"
+}
+
+@test "git-together: push/pull" {
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+  portal_push "clone1"
+
+  git_together "clone2"
   portal_pull "clone2"
 
   portal_push "clone2"
@@ -24,7 +37,7 @@
 }
 
 @test "validate remote branch exists before pushing" {
-  add_git_duet "clone1"
+  add_git_duet "clone1" "clone2"
 
   git_duet "clone1"
 
@@ -41,23 +54,28 @@
 
 setup() {
   clean_bin
-  install_git_duet
-  install_portal
+  brew_install_git_duet
+  brew_install_git_together
+  go_build_portal
   clean_test
-  create_remote_repo "project"
-  clone "project" "clone1"
-  clone "project" "clone2"
+  git_init_bare "project"
+  git_clone "project" "clone1"
+  git_clone "project" "clone2"
 }
 
 clean_bin() {
   rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
 }
 
-install_git_duet() {
-  git-duet || brew install git-duet
+brew_install_git_duet() {
+  git-duet || brew install git-duet/tap/git-duet
 }
 
-install_portal() {
+brew_install_git_together() {
+  git-together || brew install pivotal/tap/git-together
+}
+
+go_build_portal() {
   go build -o "$BATS_TMPDIR"/bin/portal
   PATH=$BATS_TMPDIR/bin:$PATH
 }
@@ -68,11 +86,11 @@ clean_test() {
   cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
 }
 
-create_remote_repo() {
+git_init_bare() {
   mkdir "$1" && pushd "$1" && git init --bare && popd || exit
 }
 
-clone() {
+git_clone() {
   git clone "$1" "$2"
   pushd "$2" || exit
   git config user.name test
@@ -95,7 +113,7 @@ EOM
   git push origin master
   popd || exit
 
-  pushd clone2 || exit
+  pushd "$2" || exit
   git pull -r
   popd || exit
 }
@@ -104,6 +122,29 @@ git_duet() {
   pushd "$1" || exit
 
   git-duet fp op
+
+  popd || exit
+}
+
+add_git_together() {
+  pushd "$1" || exit
+  git config --file .git-together --add git-together.domain email.com
+  git config --file .git-together --add git-together.authors.fp 'Fake Person; fperson'
+  git config --file .git-together --add git-together.authors.op 'Other Person; operson'
+  git add .
+  git commit -am "Add .git-together"
+  git push origin master
+  popd || exit
+
+  pushd "$2" || exit
+  git pull -r
+  popd || exit
+}
+
+git_together() {
+  pushd "$1" || exit
+
+  git-together with fp op
 
   popd || exit
 }

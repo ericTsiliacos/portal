@@ -31,7 +31,8 @@ func main() {
 
 			branchStrategy, err := branchNameStrategy()
 			if err != nil {
-				log.Fatalf("Error: %v", err)
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
 			}
 
 			branch := branchName(branchStrategy)
@@ -99,7 +100,13 @@ func branchNameStrategy() ([]string, error) {
 }
 
 func checkRemoteBranchExistence(branch string) {
-	remoteBranch := execute(fmt.Sprintf("git ls-remote --heads origin %s", branch))
+	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
+	remoteBranch, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
 	if len(remoteBranch) > 0 {
 		fmt.Println(fmt.Sprintf("remote branch %s already exists", branch))
 		os.Exit(1)
@@ -107,7 +114,13 @@ func checkRemoteBranchExistence(branch string) {
 }
 
 func checkForDirtyIndex() {
-	index := execute("git status --porcelain=v1")
+	command := "git status --porcelain=v1"
+	index, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
 	indexCount := strings.Count(index, "\n")
 	if indexCount > 0 {
 		fmt.Println("git index dirty!")
@@ -148,7 +161,11 @@ func run(commands []string, verbose bool) {
 		if verbose == true {
 			fmt.Println(command)
 		}
-		output := execute(command)
+		output, err := execute(command)
+
+		if err != nil {
+			commandFailure(command, err)
+		}
 
 		if verbose == true {
 			fmt.Println(output)
@@ -181,4 +198,10 @@ func Map(vs []string, f func(string) string) []string {
 		vsm[i] = f(v)
 	}
 	return vsm
+}
+
+func commandFailure(command string, err error) {
+	fmt.Println(command)
+	_, _ = fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
 }

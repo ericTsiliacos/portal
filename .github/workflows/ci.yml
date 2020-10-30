@@ -17,4 +17,5 @@ jobs:
           go-version: ^1.13
       - uses: mig4/setup-bats@v1.0.1
       - run: brew install git-duet/tap/git-duet
-      - run: bats bats
+      - run: brew install pivotal/tap/git-together
+      - run: bats ./bats
