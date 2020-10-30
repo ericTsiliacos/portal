@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -65,7 +64,8 @@ func main() {
 
 			branchStrategy, err := branchNameStrategy()
 			if err != nil {
-				log.Fatalf("Error: %v", err)
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
 			}
 
 			branch := branchName(branchStrategy)
@@ -86,17 +86,20 @@ func main() {
 }
 
 func branchNameStrategy() ([]string, error) {
-	gitDuetAuthors := gitDuet()
-	if len(gitDuetAuthors) > 1 {
-		return gitDuetAuthors, nil
+	pairs := [][]string{
+		gitDuet(),
+		gitTogether(),
 	}
 
-	gitTogetherAuthors := gitTogether()
-	if len(gitTogetherAuthors) > 1 {
-		return gitTogetherAuthors, nil
+	if all(pairs, empty) {
+		return nil, errors.New("no branch naming strategy found")
 	}
 
-	return nil, errors.New("branch naming strategy not found")
+	if many(pairs, nonEmpty) {
+		return nil, errors.New("multiple branch naming strategies found")
+	}
+
+	return findFirst(pairs, nonEmpty), nil
 }
 
 func checkRemoteBranchExistence(branch string) {
@@ -198,6 +201,47 @@ func Map(vs []string, f func(string) string) []string {
 		vsm[i] = f(v)
 	}
 	return vsm
+}
+
+func all(xxs [][]string, f func(xs []string) bool) bool {
+	for _, xs := range xxs {
+		if f(xs) == false {
+			return false
+		}
+	}
+	return true
+}
+
+func many(xxs [][]string, f func(xs []string) bool) bool {
+	seen := false
+	for _, xs := range xxs {
+		if seen && f(xs) {
+			return true
+		} else if f(xs) {
+			seen = true
+		} else {
+			continue
+		}
+	}
+	return false
+}
+
+func findFirst(xxs [][]string, f func(xs []string) bool) []string {
+	for i, xs := range xxs {
+		if f(xs) == true {
+			return xxs[i]
+		}
+	}
+
+	return nil
+}
+
+func empty(xs []string) bool {
+	return len(xs) == 0
+}
+
+func nonEmpty(xs []string) bool {
+	return len(xs) != 0
 }
 
 func commandFailure(command string, err error) {

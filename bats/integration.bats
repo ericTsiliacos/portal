@@ -26,6 +26,40 @@
   portal_pull "clone1"
 }
 
+@test "validate portal push found single branch naming strategy" {
+  add_git_duet "clone1" "clone2"
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+  git_duet "clone1"
+
+  pushd "clone1" || exit
+
+  touch foo.text
+
+  run portal push
+  [ "$status" -eq 1 ]
+  [ "$output" = "Error: multiple branch naming strategies found" ]
+
+  popd || exit
+}
+
+@test "validate portal pull found single branch naming strategy" {
+  add_git_duet "clone1" "clone2"
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+  git_duet "clone1"
+
+  pushd "clone1" || exit
+
+  run portal pull
+  [ "$status" -eq 1 ]
+  [ "$output" = "Error: multiple branch naming strategies found" ]
+
+  popd || exit
+}
+
 @test "validate clean index before pulling" {
   cd clone1
   touch foo.text
@@ -36,7 +70,7 @@
   [ "$output" = "git index dirty!" ]
 }
 
-@test "validate remote branch exists before pushing" {
+@test "validate nonexistent remote branch before pushing" {
   add_git_duet "clone1" "clone2"
 
   git_duet "clone1"
