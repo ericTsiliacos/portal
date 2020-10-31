@@ -12,10 +12,12 @@ import (
 	"time"
 )
 
+var version string
+
 func main() {
 	commando.
 		SetExecutableName("portal").
-		SetVersion("1.0.0").
+		SetVersion(version).
 		SetDescription("A commandline tool for moving work-in-progress to and from your pair using git")
 
 	commando.
