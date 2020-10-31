@@ -1,7 +1,5 @@
 # 🌀 Portal
 
-Credit to George Dean (@gdean123) for the idea.
-
 ### Installation
 ```brew install erictsiliacos/tap/portal```
 
@@ -25,3 +23,5 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 ### Testing
 
 ```bats ./bats```
+
+Credit to George Dean (@gdean123) for the idea.
