@@ -7,6 +7,7 @@ import (
 	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -85,6 +86,27 @@ func main() {
 		})
 
 	commando.Parse(nil)
+}
+
+func gitDuet() []string {
+	author, authorErr := execute("git config --get duet.env.git-author-initials")
+	coauthor, coauthorErr := execute("git config --get duet.env.git-committer-initials")
+
+	if authorErr != nil && coauthorErr != nil {
+		return []string{}
+	}
+
+	return []string{author, coauthor}
+}
+
+func gitTogether() []string {
+	activeAuthors, err := execute("git config --get git-together.active")
+
+	if err != nil {
+		return []string{}
+	}
+
+	return strings.Split(activeAuthors, "+")
 }
 
 func branchNameStrategy() ([]string, error) {
@@ -244,6 +266,14 @@ func empty(xs []string) bool {
 
 func nonEmpty(xs []string) bool {
 	return len(xs) != 0
+}
+
+func execute(command string) (string, error) {
+	s := strings.Split(command, " ")
+	cmd, args := s[0], s[1:]
+	cmdOut, err := exec.Command(cmd, args...).Output()
+
+	return string(cmdOut), err
 }
 
 func commandFailure(command string, err error) {
