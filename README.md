@@ -24,4 +24,6 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 
 ```bats ./bats```
 
-Credit to George Dean (@gdean123) for the idea.
+### Credit 
+
+George Dean (@gdean123) for the initial idea
