@@ -16,3 +16,8 @@ jobs:
         goos: darwin
         goarch: amd64
         ldflags: -X "main.version=${{ github.event.release.tag_name }}"
+    - uses: dawidd6/action-homebrew-bump-formula@v3
+      with:
+        token: ${{secrets.TAP_GITHUB_TOKEN}}
+        tap: ericTsiliacos/homebrew-tap
+        formula: portal
