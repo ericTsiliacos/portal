@@ -6,6 +6,7 @@ load './test_helpers/setup.bash'
 load './test_helpers/git_repository.bash'
 load './test_helpers/git_duet.bash'
 load './test_helpers/git_together.bash'
+load './test_helpers/portal.bash'
 
 @test "git-duet: push/pull" {
   add_git_duet "clone1" "clone2"
@@ -129,40 +130,4 @@ teardown() {
   if [[ "${#BATS_TEST_NAMES[@]}" -eq "$BATS_TEST_NUMBER" ]]; then
     clean_bin
   fi
-}
-
-go_build_portal() {
-  go build -o "$BATS_TMPDIR"/bin/test_portal
-}
-
-portal_push() {
-  pushd "$1" || exit
-
-  touch foo.text
-
-  run test_portal push
-  assert_success
-
-  run git status --porcelain=v1
-  assert_output ""
-
-  popd || exit
-}
-
-portal_pull() {
-  pushd "$1" || exit
-
-  run git status --porcelain=v1
-  assert_output ""
-
-  run test_portal pull
-  assert_success
-
-  run git status --porcelain=v1
-  assert_output "?? foo.text"
-
-  run git ls-remote --heads origin portal-fp-op
-  assert_output ""
-
-  popd || exit
 }
