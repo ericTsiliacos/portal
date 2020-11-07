@@ -73,11 +73,8 @@ func main() {
 			branch := branchName(branchStrategy)
 
 			commands := []string{
-				"git fetch",
-				fmt.Sprintf("git checkout -b %s origin/%s", branch, branch),
+				fmt.Sprintf("git pull -r origin %s", branch),
 				"git reset HEAD^",
-				"git checkout -",
-				fmt.Sprintf("git branch -D %s", branch),
 				fmt.Sprintf("git push origin --delete %s", branch),
 			}
 
