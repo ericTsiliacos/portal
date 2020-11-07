@@ -38,7 +38,7 @@ func main() {
 
 			branch := branchName(branchStrategy)
 
-			checkRemoteBranchExistence(branch)
+			checkRemoteBranchNonExistence(branch)
 
 			commands := []string{
 				fmt.Sprintf("git checkout -b %s", branch),
@@ -71,6 +71,8 @@ func main() {
 			}
 
 			branch := branchName(branchStrategy)
+
+			checkRemoteBranchExistence(branch)
 
 			commands := []string{
 				fmt.Sprintf("git pull -r origin %s", branch),
@@ -122,7 +124,7 @@ func branchNameStrategy() ([]string, error) {
 	return findFirst(pairs, nonEmpty), nil
 }
 
-func checkRemoteBranchExistence(branch string) {
+func checkRemoteBranchNonExistence(branch string) {
 	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
 	remoteBranch, err := execute(command)
 
@@ -132,6 +134,20 @@ func checkRemoteBranchExistence(branch string) {
 
 	if len(remoteBranch) > 0 {
 		fmt.Println(fmt.Sprintf("remote branch %s already exists", branch))
+		os.Exit(1)
+	}
+}
+
+func checkRemoteBranchExistence(branch string) {
+	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
+	remoteBranch, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	if len(remoteBranch) == 0 {
+		fmt.Println(fmt.Sprintf("remote branch %s does not exists", branch))
 		os.Exit(1)
 	}
 }
