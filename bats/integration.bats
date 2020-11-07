@@ -34,77 +34,84 @@ load './test_helpers/portal.bash'
   portal_pull "clone1"
 }
 
-@test "push: validate found single branch naming strategy" {
-  add_git_duet "clone1" "clone2"
-  add_git_together "clone1" "clone2"
+pull_validation() {
+  @test "pull: validate found single branch naming strategy" {
+    add_git_duet "clone1" "clone2"
+    add_git_together "clone1" "clone2"
 
-  git_together "clone1"
-  git_duet "clone1"
+    git_together "clone1"
+    git_duet "clone1"
 
-  pushd "clone1" || exit
+    pushd "clone1" || exit
 
-  touch foo.text
+    run test_portal pull
 
-  run test_portal push
+    assert_failure
+    assert_output "Error: multiple branch naming strategies found"
+  }
 
-  assert_failure
-  assert_output "Error: multiple branch naming strategies found"
+  @test "pull: validate clean index" {
+    cd clone1
+    touch foo.text
+
+    run test_portal pull
+
+    assert_failure
+    assert_output "git index dirty!"
+  }
+
+  @test "pull: validate existent remote branch" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    cd clone2
+    run test_portal pull
+
+    assert_failure
+    assert_output "remote branch portal-fp-op does not exists"
+  }
 }
 
-@test "push: validate nonexistent remote branch" {
-  add_git_duet "clone1" "clone2"
+push_validation() {
+  @test "push: validate found single branch naming strategy" {
+    add_git_duet "clone1" "clone2"
+    add_git_together "clone1" "clone2"
 
-  git_duet "clone1"
+    git_together "clone1"
+    git_duet "clone1"
 
-  cd clone1
-  touch foo.text
-  git checkout -b portal-fp-op
-  git add .
-  git commit -m "WIP"
-  git push -u origin portal-fp-op
+    pushd "clone1" || exit
 
-  run test_portal push
+    touch foo.text
 
-  assert_failure
-  assert_output "remote branch portal-fp-op already exists"
+    run test_portal push
+
+    assert_failure
+    assert_output "Error: multiple branch naming strategies found"
+  }
+
+  @test "push: validate nonexistent remote branch" {
+    add_git_duet "clone1" "clone2"
+
+    git_duet "clone1"
+
+    cd clone1
+    touch foo.text
+    git checkout -b portal-fp-op
+    git add .
+    git commit -m "WIP"
+    git push -u origin portal-fp-op
+
+    run test_portal push
+
+    assert_failure
+    assert_output "remote branch portal-fp-op already exists"
+  }
 }
 
-@test "pull: validate found single branch naming strategy" {
-  add_git_duet "clone1" "clone2"
-  add_git_together "clone1" "clone2"
-
-  git_together "clone1"
-  git_duet "clone1"
-
-  pushd "clone1" || exit
-
-  run test_portal pull
-
-  assert_failure
-  assert_output "Error: multiple branch naming strategies found"
-}
-
-@test "pull: validate clean index" {
-  cd clone1
-  touch foo.text
-
-  run test_portal pull
-
-  assert_failure
-  assert_output "git index dirty!"
-}
-
-@test "pull: validate existent remote branch" {
-  add_git_duet "clone1" "clone2"
-  git_duet "clone1"
-  git_duet "clone2"
-
-  cd clone2
-  run test_portal pull
-
-  assert_failure
-  assert_output "remote branch portal-fp-op does not exists"
-}
+pull_validation
+push_validation
 
 setup() {
   setup_file
