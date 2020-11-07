@@ -11,9 +11,8 @@ Assumsing both pairs have done `git duet <person1> <person2>` or `git-together w
 - `portal pull`: pulls the changes at the pair branch name and cleans up the temporary branch
   
 ### Assumes
-- You are your pair are on the same branch
 - You have git installed
-- Either [git-duet](https://github.com/git-duet/git-duet) or [git-together](https://github.com/kejadlen/git-together) use
+- Using either [git-duet](https://github.com/git-duet/git-duet) or [git-together](https://github.com/kejadlen/git-together)
 - Both you and your pair have write access to the working repository
   
 ### Bats
