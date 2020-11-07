@@ -33,7 +33,7 @@ load './test_helpers/git_together.bash'
   portal_pull "clone1"
 }
 
-@test "validate portal push found single branch naming strategy" {
+@test "push: validate found single branch naming strategy" {
   add_git_duet "clone1" "clone2"
   add_git_together "clone1" "clone2"
 
@@ -50,22 +50,7 @@ load './test_helpers/git_together.bash'
   assert_output "Error: multiple branch naming strategies found"
 }
 
-@test "validate portal pull found single branch naming strategy" {
-  add_git_duet "clone1" "clone2"
-  add_git_together "clone1" "clone2"
-
-  git_together "clone1"
-  git_duet "clone1"
-
-  pushd "clone1" || exit
-
-  run test_portal pull
-
-  assert_failure
-  assert_output "Error: multiple branch naming strategies found"
-}
-
-@test "validate nonexistent remote branch before pushing" {
+@test "push: validate nonexistent remote branch" {
   add_git_duet "clone1" "clone2"
 
   git_duet "clone1"
@@ -83,7 +68,22 @@ load './test_helpers/git_together.bash'
   assert_output "remote branch portal-fp-op already exists"
 }
 
-@test "validate clean index before pulling" {
+@test "pull: validate found single branch naming strategy" {
+  add_git_duet "clone1" "clone2"
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+  git_duet "clone1"
+
+  pushd "clone1" || exit
+
+  run test_portal pull
+
+  assert_failure
+  assert_output "Error: multiple branch naming strategies found"
+}
+
+@test "pull: validate clean index" {
   cd clone1
   touch foo.text
 
@@ -93,7 +93,7 @@ load './test_helpers/git_together.bash'
   assert_output "git index dirty!"
 }
 
-@test "validate existent remote branch before pulling" {
+@test "pull: validate existent remote branch" {
   add_git_duet "clone1" "clone2"
   git_duet "clone1"
   git_duet "clone2"
