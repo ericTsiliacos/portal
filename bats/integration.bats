@@ -37,7 +37,7 @@
 
   touch foo.text
 
-  run portal push
+  run "$BATS_TMPDIR"/bin/portal push
   [ "$status" -eq 1 ]
   [ "$output" = "Error: multiple branch naming strategies found" ]
 
@@ -53,7 +53,7 @@
 
   pushd "clone1" || exit
 
-  run portal pull
+  run "$BATS_TMPDIR"/bin/portal pull
   [ "$status" -eq 1 ]
   [ "$output" = "Error: multiple branch naming strategies found" ]
 
@@ -72,7 +72,7 @@
   git commit -m "WIP"
   git push -u origin portal-fp-op
 
-  run portal push
+  run "$BATS_TMPDIR"/bin/portal push
   [ "$output" = "remote branch portal-fp-op already exists" ]
 }
 
@@ -82,7 +82,7 @@
   run git status --porcelain=v1
   [ "$output" = "?? foo.text" ]
 
-  run portal pull
+  run "$BATS_TMPDIR"/bin/portal pull
   [ "$output" = "git index dirty!" ]
 }
 
@@ -92,21 +92,23 @@
   git_duet "clone2"
 
   cd clone2
-  run portal pull
+  run "$BATS_TMPDIR"/bin/portal pull
   [ "$status" -eq 1 ]
   [ "$output" = "remote branch portal-fp-op does not exists" ]
 }
 
-setup() {
-  if [[ "$BATS_TEST_NUMBER" -eq 1 ]]; then
-    echo "=================================>"
+setup_file() {
+ if [[ "$BATS_TEST_NUMBER" -eq 1 ]]; then
     clean_bin
     brew_install_git_duet
     brew_install_git_together
     go_build_portal
   fi
+}
 
-  add_bin
+setup() {
+  setup_file
+
   clean_test
   git_init_bare "project"
   git_clone "project" "clone1"
@@ -115,10 +117,6 @@ setup() {
 
 clean_bin() {
   rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
-}
-
-add_bin() {
-  PATH=$BATS_TMPDIR/bin:$PATH
 }
 
 brew_install_git_duet() {
@@ -207,7 +205,7 @@ portal_push() {
 
   touch foo.text
 
-  run portal push
+  run "$BATS_TMPDIR"/bin/portal push
   [ "$status" -eq 0 ]
 
   run git status --porcelain=v1
@@ -222,7 +220,7 @@ portal_pull() {
   run git status --porcelain=v1
   [ "$output" = "" ]
 
-  run portal pull
+  run "$BATS_TMPDIR"/bin/portal pull
   echo "$output"
   [ "$status" -eq 0 ]
 
