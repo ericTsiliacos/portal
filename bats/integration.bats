@@ -41,10 +41,9 @@ load '/usr/local/lib/bats-assert/load.bash'
   touch foo.text
 
   run test_portal push
-  [ "$status" -eq 1 ]
-  [ "$output" = "Error: multiple branch naming strategies found" ]
 
-  popd || exit
+  assert_failure
+  assert_output "Error: multiple branch naming strategies found"
 }
 
 @test "validate portal pull found single branch naming strategy" {
@@ -57,10 +56,9 @@ load '/usr/local/lib/bats-assert/load.bash'
   pushd "clone1" || exit
 
   run test_portal pull
-  [ "$status" -eq 1 ]
-  [ "$output" = "Error: multiple branch naming strategies found" ]
 
-  popd || exit
+  assert_failure
+  assert_output "Error: multiple branch naming strategies found"
 }
 
 @test "validate nonexistent remote branch before pushing" {
@@ -76,17 +74,19 @@ load '/usr/local/lib/bats-assert/load.bash'
   git push -u origin portal-fp-op
 
   run test_portal push
-  [ "$output" = "remote branch portal-fp-op already exists" ]
+
+  assert_failure
+  assert_output "remote branch portal-fp-op already exists"
 }
 
 @test "validate clean index before pulling" {
   cd clone1
   touch foo.text
-  run git status --porcelain=v1
-  [ "$output" = "?? foo.text" ]
 
   run test_portal pull
-  [ "$output" = "git index dirty!" ]
+
+  assert_failure
+  assert_output "git index dirty!"
 }
 
 @test "validate existent remote branch before pulling" {
@@ -97,7 +97,8 @@ load '/usr/local/lib/bats-assert/load.bash'
   cd clone2
   run test_portal pull
 
-  assert_failure 1 "remote branch portal-fp-op does not exists"
+  assert_failure
+  assert_output "remote branch portal-fp-op does not exists"
 }
 
 setup() {
@@ -224,10 +225,10 @@ portal_push() {
   touch foo.text
 
   run test_portal push
-  [ "$status" -eq 0 ]
+  assert_success
 
   run git status --porcelain=v1
-  [ "$output" = "" ]
+  assert_output ""
 
   popd || exit
 }
@@ -236,17 +237,16 @@ portal_pull() {
   pushd "$1" || exit
 
   run git status --porcelain=v1
-  [ "$output" = "" ]
+  assert_output ""
 
   run test_portal pull
-  echo "$output"
-  [ "$status" -eq 0 ]
+  assert_success
 
   run git status --porcelain=v1
-  [ "$output" = "?? foo.text" ]
+  assert_output "?? foo.text"
 
   run git ls-remote --heads origin portal-fp-op
-  [ "$output" = "" ]
+  assert_output ""
 
   popd || exit
 }
