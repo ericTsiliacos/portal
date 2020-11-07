@@ -2,6 +2,10 @@
 
 load '/usr/local/lib/bats-support/load.bash'
 load '/usr/local/lib/bats-assert/load.bash'
+load './test_helpers/setup.bash'
+load './test_helpers/git_repository.bash'
+load './test_helpers/git_duet.bash'
+load './test_helpers/git_together.bash'
 
 @test "git-duet: push/pull" {
   add_git_duet "clone1" "clone2"
@@ -104,7 +108,7 @@ load '/usr/local/lib/bats-assert/load.bash'
 setup() {
   setup_file
 
-  add_bin
+  add_bin_to_path
   create_test
   git_init_bare "project"
   git_clone "project" "clone1"
@@ -127,96 +131,8 @@ teardown() {
   fi
 }
 
-add_bin() {
-  PATH=$BATS_TMPDIR/bin:$PATH
-}
-
-create_test() {
-  mkdir -p "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
-}
-
-clean_bin() {
-  rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
-}
-
-brew_install_git_duet() {
-  git-duet || brew install git-duet/tap/git-duet
-}
-
-brew_install_git_together() {
-  git-together || brew install pivotal/tap/git-together
-}
-
 go_build_portal() {
   go build -o "$BATS_TMPDIR"/bin/test_portal
-}
-
-clean_test() {
-  rm -rf "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-}
-
-git_init_bare() {
-  mkdir "$1" && pushd "$1" && git init --bare && popd || exit
-}
-
-git_clone() {
-  git clone "$1" "$2"
-  pushd "$2" || exit
-  git config user.name test
-  git config user.email test@local
-  popd || exit
-}
-
-add_git_duet() {
-  pushd "$1" || exit
-  cat > .git-authors <<- EOM
-authors:
-  fp: Fake Person; fperson
-  op: Other Person; operson
-email_addresses:
-  fp: fperson@email.com
-  op: operson@email.com
-EOM
-  git add .
-  git commit -am "Add .git-author"
-  git push origin master
-  popd || exit
-
-  pushd "$2" || exit
-  git pull -r
-  popd || exit
-}
-
-git_duet() {
-  pushd "$1" || exit
-
-  git-duet fp op
-
-  popd || exit
-}
-
-add_git_together() {
-  pushd "$1" || exit
-  git config --file .git-together --add git-together.domain email.com
-  git config --file .git-together --add git-together.authors.fp 'Fake Person; fperson'
-  git config --file .git-together --add git-together.authors.op 'Other Person; operson'
-  git add .
-  git commit -am "Add .git-together"
-  git push origin master
-  popd || exit
-
-  pushd "$2" || exit
-  git pull -r
-  popd || exit
-}
-
-git_together() {
-  pushd "$1" || exit
-
-  git-together with fp op
-
-  popd || exit
 }
 
 portal_push() {
