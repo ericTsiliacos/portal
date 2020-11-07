@@ -97,11 +97,14 @@
   [ "$output" = "remote branch portal-fp-op does not exists" ]
 }
 
-setup() {
+setup_file() {
   clean_bin
   brew_install_git_duet
   brew_install_git_together
   go_build_portal
+}
+
+setup() {
   clean_test
   git_init_bare "project"
   git_clone "project" "clone1"
