@@ -37,7 +37,7 @@
 
   touch foo.text
 
-  run "$BATS_TMPDIR"/bin/portal push
+  run test_portal push
   [ "$status" -eq 1 ]
   [ "$output" = "Error: multiple branch naming strategies found" ]
 
@@ -53,7 +53,7 @@
 
   pushd "clone1" || exit
 
-  run "$BATS_TMPDIR"/bin/portal pull
+  run test_portal pull
   [ "$status" -eq 1 ]
   [ "$output" = "Error: multiple branch naming strategies found" ]
 
@@ -72,7 +72,7 @@
   git commit -m "WIP"
   git push -u origin portal-fp-op
 
-  run "$BATS_TMPDIR"/bin/portal push
+  run test_portal push
   [ "$output" = "remote branch portal-fp-op already exists" ]
 }
 
@@ -82,7 +82,7 @@
   run git status --porcelain=v1
   [ "$output" = "?? foo.text" ]
 
-  run "$BATS_TMPDIR"/bin/portal pull
+  run test_portal pull
   [ "$output" = "git index dirty!" ]
 }
 
@@ -92,33 +92,44 @@
   git_duet "clone2"
 
   cd clone2
-  run "$BATS_TMPDIR"/bin/portal pull
+  run test_portal pull
   [ "$status" -eq 1 ]
   [ "$output" = "remote branch portal-fp-op does not exists" ]
 }
 
+setup() {
+  setup_file
+
+  add_bin
+  create_test
+  git_init_bare "project"
+  git_clone "project" "clone1"
+  git_clone "project" "clone2"
+}
+
 setup_file() {
  if [[ "$BATS_TEST_NUMBER" -eq 1 ]]; then
-    clean_bin
     brew_install_git_duet
     brew_install_git_together
     go_build_portal
   fi
 }
 
-setup() {
-  setup_file
-
-  clean_test
-  git_init_bare "project"
-  git_clone "project" "clone1"
-  git_clone "project" "clone2"
-}
-
 teardown() {
+  clean_test
+
   if [[ "${#BATS_TEST_NAMES[@]}" -eq "$BATS_TEST_NUMBER" ]]; then
     clean_bin
   fi
+}
+
+add_bin() {
+  PATH=$BATS_TMPDIR/bin:$PATH
+}
+
+create_test() {
+  mkdir -p "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
+  cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
 }
 
 clean_bin() {
@@ -134,13 +145,11 @@ brew_install_git_together() {
 }
 
 go_build_portal() {
-  go build -o "$BATS_TMPDIR"/bin/portal
+  go build -o "$BATS_TMPDIR"/bin/test_portal
 }
 
 clean_test() {
   rm -rf "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  mkdir -p "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}"
-  cd "${BATS_TMPDIR:?}"/"${BATS_TEST_NAME:?}" || exit
 }
 
 git_init_bare() {
@@ -211,7 +220,7 @@ portal_push() {
 
   touch foo.text
 
-  run "$BATS_TMPDIR"/bin/portal push
+  run test_portal push
   [ "$status" -eq 0 ]
 
   run git status --porcelain=v1
@@ -226,7 +235,7 @@ portal_pull() {
   run git status --porcelain=v1
   [ "$output" = "" ]
 
-  run "$BATS_TMPDIR"/bin/portal pull
+  run test_portal pull
   echo "$output"
   [ "$status" -eq 0 ]
 
