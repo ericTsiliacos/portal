@@ -1,5 +1,8 @@
 #!/usr/bin/env bats
 
+load '/usr/local/lib/bats-support/load.bash'
+load '/usr/local/lib/bats-assert/load.bash'
+
 @test "git-duet: push/pull" {
   add_git_duet "clone1" "clone2"
 
@@ -93,8 +96,8 @@
 
   cd clone2
   run test_portal pull
-  [ "$status" -eq 1 ]
-  [ "$output" = "remote branch portal-fp-op does not exists" ]
+
+  assert_failure 1 "remote branch portal-fp-op does not exists"
 }
 
 setup() {
