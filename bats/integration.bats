@@ -60,16 +60,6 @@
   popd || exit
 }
 
-@test "validate clean index before pulling" {
-  cd clone1
-  touch foo.text
-  run git status --porcelain=v1
-  [ "$output" = "?? foo.text" ]
-
-  run portal pull
-  [ "$output" = "git index dirty!" ]
-}
-
 @test "validate nonexistent remote branch before pushing" {
   add_git_duet "clone1" "clone2"
 
@@ -86,6 +76,16 @@
   [ "$output" = "remote branch portal-fp-op already exists" ]
 }
 
+@test "validate clean index before pulling" {
+  cd clone1
+  touch foo.text
+  run git status --porcelain=v1
+  [ "$output" = "?? foo.text" ]
+
+  run portal pull
+  [ "$output" = "git index dirty!" ]
+}
+
 @test "validate existent remote branch before pulling" {
   add_git_duet "clone1" "clone2"
   git_duet "clone1"
@@ -97,14 +97,16 @@
   [ "$output" = "remote branch portal-fp-op does not exists" ]
 }
 
-setup_file() {
-  clean_bin
-  brew_install_git_duet
-  brew_install_git_together
-  go_build_portal
-}
-
 setup() {
+  if [[ "$BATS_TEST_NUMBER" -eq 1 ]]; then
+    echo "=================================>"
+    clean_bin
+    brew_install_git_duet
+    brew_install_git_together
+    go_build_portal
+  fi
+
+  add_bin
   clean_test
   git_init_bare "project"
   git_clone "project" "clone1"
@@ -113,6 +115,10 @@ setup() {
 
 clean_bin() {
   rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
+}
+
+add_bin() {
+  PATH=$BATS_TMPDIR/bin:$PATH
 }
 
 brew_install_git_duet() {
@@ -125,7 +131,6 @@ brew_install_git_together() {
 
 go_build_portal() {
   go build -o "$BATS_TMPDIR"/bin/portal
-  PATH=$BATS_TMPDIR/bin:$PATH
 }
 
 clean_test() {
