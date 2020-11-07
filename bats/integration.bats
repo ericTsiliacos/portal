@@ -115,6 +115,12 @@ setup() {
   git_clone "project" "clone2"
 }
 
+teardown() {
+  if [[ "${#BATS_TEST_NAMES[@]}" -eq "$BATS_TEST_NUMBER" ]]; then
+    clean_bin
+  fi
+}
+
 clean_bin() {
   rm -rf "${BATS_TMPDIR:?BATS_TMPDIR not set}"/bin
 }
