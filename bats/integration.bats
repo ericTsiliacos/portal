@@ -86,6 +86,17 @@
   [ "$output" = "remote branch portal-fp-op already exists" ]
 }
 
+@test "validate existent remote branch before pulling" {
+  add_git_duet "clone1" "clone2"
+  git_duet "clone1"
+  git_duet "clone2"
+
+  cd clone2
+  run portal pull
+  [ "$status" -eq 1 ]
+  [ "$output" = "remote branch portal-fp-op does not exists" ]
+}
+
 setup() {
   clean_bin
   brew_install_git_duet
