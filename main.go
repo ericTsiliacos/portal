@@ -63,6 +63,7 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 
 			checkForDirtyIndex()
+			checkForUnpublishedWork()
 
 			branchStrategy, err := branchNameStrategy()
 			if err != nil {
@@ -163,6 +164,20 @@ func checkForDirtyIndex() {
 	indexCount := strings.Count(index, "\n")
 	if indexCount > 0 {
 		fmt.Println("git index dirty!")
+		os.Exit(1)
+	}
+}
+
+func checkForUnpublishedWork() {
+	command := "git cherry -v"
+	output, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	if len(output) > 0 {
+		fmt.Println("Unpublished work detected.")
 		os.Exit(1)
 	}
 }

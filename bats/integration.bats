@@ -71,6 +71,18 @@ pull_validation() {
     assert_failure
     assert_output "remote branch portal-fp-op does not exists"
   }
+
+  @test "pull: validate no unpublished work" {
+    cd clone1
+    touch foo.text
+    git add .
+    git commit -m "Un-pushed work"
+
+    run test_portal pull -v
+
+    assert_failure
+    assert_output "Unpublished work detected."
+  }
 }
 
 push_validation() {
