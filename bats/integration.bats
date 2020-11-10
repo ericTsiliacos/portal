@@ -10,11 +10,10 @@ load './test_helpers/portal.bash'
 
 @test "git-duet: push/pull" {
   add_git_duet "clone1" "clone2"
-
   git_duet "clone1"
-  portal_push "clone1"
-
   git_duet "clone2"
+
+  portal_push "clone1"
   portal_pull "clone2"
 
   portal_push "clone2"
@@ -23,11 +22,10 @@ load './test_helpers/portal.bash'
 
 @test "git-together: push/pull" {
   add_git_together "clone1" "clone2"
-
   git_together "clone1"
-  portal_push "clone1"
-
   git_together "clone2"
+
+  portal_push "clone1"
   portal_pull "clone2"
 
   portal_push "clone2"
@@ -36,8 +34,8 @@ load './test_helpers/portal.bash'
 
 @test "push/pull: only commits and resets work-in-progress leaving nothing" {
   add_git_together "clone1" "clone2"
-
   git_together "clone1"
+  git_together "clone2"
 
   pushd clone1
   touch foo.text
@@ -50,7 +48,6 @@ load './test_helpers/portal.bash'
   assert_output ""
   popd
 
-  git_together "clone2"
   pushd clone2
   run test_portal pull --verbose
   assert_success
