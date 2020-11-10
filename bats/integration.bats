@@ -34,6 +34,31 @@ load './test_helpers/portal.bash'
   portal_pull "clone1"
 }
 
+@test "push/pull: only commits and resets work-in-progress leaving nothing" {
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+
+  pushd clone1
+  touch foo.text
+  git add .
+  git commit -m "work in progress"
+  run test_portal push -v
+  assert_success
+
+  run git cherry -v
+  assert_output ""
+  popd
+
+  git_together "clone2"
+  pushd clone2
+  run test_portal pull --verbose
+  assert_success
+
+  run git cherry -v
+  assert_output -p "work in progress"
+}
+
 pull_validation() {
   @test "pull: validate found single branch naming strategy" {
     add_git_duet "clone1" "clone2"

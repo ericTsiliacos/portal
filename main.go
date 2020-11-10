@@ -43,10 +43,11 @@ func main() {
 			commands := []string{
 				fmt.Sprintf("git checkout -b %s", branch),
 				"git add .",
-				"git commit -m \"WIP\"",
+				"git commit --allow-empty -m \"portal\"",
 				"git push origin HEAD",
 				"git checkout -",
 				fmt.Sprintf("git branch -D %s", branch),
+				"git reset @~ --hard",
 			}
 
 			runner(commands, dryRun, verbose, "✨ Sent!")
