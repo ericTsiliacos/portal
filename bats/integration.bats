@@ -2,6 +2,7 @@
 
 load '/usr/local/lib/bats-support/load.bash'
 load '/usr/local/lib/bats-assert/load.bash'
+load '/usr/local/lib/bats-file/load.bash'
 load './test_helpers/setup.bash'
 load './test_helpers/git_repository.bash'
 load './test_helpers/git_duet.bash'
@@ -32,7 +33,7 @@ load './test_helpers/portal.bash'
   portal_pull "clone1"
 }
 
-@test "push/pull: only commits and resets work-in-progress leaving nothing" {
+@test "push/pull: commits and resets index" {
   add_git_together "clone1" "clone2"
   git_together "clone1"
   git_together "clone2"
@@ -41,7 +42,7 @@ load './test_helpers/portal.bash'
   touch foo.text
   git add .
   git commit -m "work in progress"
-  run test_portal push -v
+  run test_portal push
   assert_success
 
   run git cherry -v
@@ -49,65 +50,102 @@ load './test_helpers/portal.bash'
   popd
 
   pushd clone2
-  run test_portal pull --verbose
+  run test_portal pull
   assert_success
 
   run git cherry -v
   assert_output -p "work in progress"
 }
 
-pull_validation() {
-  @test "pull: validate found single branch naming strategy" {
-    add_git_duet "clone1" "clone2"
-    add_git_together "clone1" "clone2"
+@test "push/pull: when puller is ahead of pusher against origin" {
+  add_git_duet "clone1" "clone2"
+  git_duet "clone1"
+  git_duet "clone2"
 
-    git_together "clone1"
-    git_duet "clone1"
+  git_clone "project" "clone3"
+  pushd clone3
+  touch something.text
+  git add .
+  git push origin head
+  popd
 
-    pushd "clone1" || exit
+  pushd clone2
+  git pull -r
+  popd
 
-    run test_portal pull
+  portal_push "clone1"
+  portal_pull "clone2"
+}
 
-    assert_failure
-    assert_output "Error: multiple branch naming strategies found"
-  }
+@test "push/pull: when pusher is ahead of puller against origin" {
+  add_git_duet "clone1" "clone2"
+  git_duet "clone1"
+  git_duet "clone2"
 
-  @test "pull: validate clean index" {
-    cd clone1
-    touch foo.text
+  git_clone "project" "clone3"
+  pushd clone3
+  touch something.text
+  git add .
+  git push origin head
+  popd
 
-    run test_portal pull
+  pushd clone1
+  git pull -r
+  popd
 
-    assert_failure
-    assert_output "git index dirty!"
-  }
+  portal_push "clone1"
+  portal_pull "clone2"
+}
 
-  @test "pull: validate existent remote branch" {
-    add_git_duet "clone1" "clone2"
-    git_duet "clone1"
-    git_duet "clone2"
+@test "push: stashes a patch of changes for safe-keeping" {
+  add_git_together "clone1" "clone2"
 
-    cd clone2
-    run test_portal pull
+  git_together "clone1"
 
-    assert_failure
-    assert_output "remote branch portal-fp-op does not exists"
-  }
+  pushd clone1
+  touch foobar.text
+  git add .
+  git commit -m "work in progress"
+  touch bar.text
+  run test_portal push
+  assert_success
 
-  @test "pull: validate no unpublished work" {
-    cd clone1
-    touch foo.text
-    git add .
-    git commit -m "Un-pushed work"
+  run git stash list -n 1
+  assert_output -p "portal-save-patch"
 
-    run test_portal pull -v
+  git stash pop
+  git am portal.patch
 
-    assert_failure
-    assert_output "Unpublished work detected."
-  }
+  git reset HEAD^
+
+  run git cherry -v
+  assert_output -p "work in progress"
+
+  assert_file_exist bar.text
 }
 
 push_validation() {
+  @test "push: validate dirty workspace" {
+    cd clone1
+    run test_portal push
+
+    assert_failure
+    assert_output "nothing to push!"
+  }
+
+  @test "push: validate branch is remotely traced" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+
+    cd clone1
+    git checkout -b some_branch
+    touch foo.text
+
+    run test_portal push
+    assert_failure
+    assert_output "Only branches with remote tracking are pushable"
+  }
+
   @test "push: validate found single branch naming strategy" {
     add_git_duet "clone1" "clone2"
     add_git_together "clone1" "clone2"
@@ -125,6 +163,21 @@ push_validation() {
     assert_output "Error: multiple branch naming strategies found"
   }
 
+  @test "push: validate local portal branch nonexistent" {
+    add_git_duet "clone1" "clone2"
+
+    git_duet "clone1"
+
+    cd clone1
+    touch foo.text
+    git checkout -b portal-fp-op
+    git checkout master
+
+    run test_portal push
+    assert_failure
+    assert_output "local branch portal-fp-op already exists"
+  }
+
   @test "push: validate nonexistent remote branch" {
     add_git_duet "clone1" "clone2"
 
@@ -137,6 +190,10 @@ push_validation() {
     git commit -m "WIP"
     git push -u origin portal-fp-op
 
+    git checkout master
+    git branch -D portal-fp-op
+    touch bar.text
+
     run test_portal push
 
     assert_failure
@@ -144,8 +201,116 @@ push_validation() {
   }
 }
 
-pull_validation
+pull_validation() {
+  @test "pull: validate current branch is remotely tracked" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    cd clone2
+    git checkout -b untracked_branch
+    run test_portal pull
+    assert_failure
+    assert_output "Must be on a branch that is remotely tracked."
+  }
+
+  @test "pull: validate no present commits" {
+    cd clone1
+    touch foo.text
+    git add .
+    git commit -m "Un-pushed work"
+
+    run test_portal pull
+
+    assert_failure
+    assert_output "master: git index dirty!"
+  }
+
+  @test "pull: validate clean index" {
+    cd clone1
+    touch foo.text
+
+    run test_portal pull
+
+    assert_failure
+    assert_output "master: git index dirty!"
+  }
+
+  @test "pull: validate existent remote branch" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    cd clone2
+    run test_portal pull
+
+    assert_failure
+    assert_output "nothing to pull!"
+  }
+
+  @test "pull: validate found single branch naming strategy" {
+    add_git_duet "clone1" "clone2"
+    add_git_together "clone1" "clone2"
+
+    git_together "clone1"
+    git_duet "clone1"
+
+    pushd "clone1" || exit
+
+    run test_portal pull
+
+    assert_failure
+    assert_output "Error: multiple branch naming strategies found"
+  }
+
+  @test "pull: validate puller is using same portal version as pusher" {
+    add_git_together "clone1" "clone2"
+    git_together "clone1"
+    git_together "clone2"
+
+    pushd clone1
+    touch foo.text
+    git add .
+    git commit -m "work in progress"
+    run test_portal push
+    assert_success
+    popd
+
+    cd clone2
+    run test_portal_v2 pull
+
+    assert_failure
+    assert_line --partial "Pusher and Puller are using different versions of portal"
+  }
+
+  @test "pull: validate puller is on same branch as pusher" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    pushd clone1
+    touch foo.text
+    git add .
+    git commit -m "foo.text"
+    run test_portal push
+    assert_success
+    popd
+
+    pushd clone2
+    git checkout -b another_branch
+    touch bar.text
+    git add .
+    git commit -m "new branch"
+    git push origin -u another_branch
+
+    run test_portal pull
+    assert_failure
+    assert_output "Starting branch another_branch did not match target branch master"
+  }
+}
+
 push_validation
+pull_validation
 
 setup() {
   setup_file

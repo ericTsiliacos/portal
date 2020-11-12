@@ -24,6 +24,8 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 
 ```brew install bats-assert```
 
+```brew install bats-file```
+
 
 ### Testing
 
