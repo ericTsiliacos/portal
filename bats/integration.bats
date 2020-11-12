@@ -9,6 +9,8 @@ load './test_helpers/git_together.bash'
 load './test_helpers/portal.bash'
 
 @test "git-duet: push/pull" {
+  skip
+
   add_git_duet "clone1" "clone2"
   git_duet "clone1"
   git_duet "clone2"
@@ -21,6 +23,8 @@ load './test_helpers/portal.bash'
 }
 
 @test "git-together: push/pull" {
+  skip
+
   add_git_together "clone1" "clone2"
   git_together "clone1"
   git_together "clone2"
@@ -32,7 +36,7 @@ load './test_helpers/portal.bash'
   portal_pull "clone1"
 }
 
-@test "push/pull: only commits and resets work-in-progress leaving nothing" {
+@test "push/pull: only commits and resets work-in-progress leaving nothing behind" {
   add_git_together "clone1" "clone2"
   git_together "clone1"
   git_together "clone2"
@@ -41,7 +45,7 @@ load './test_helpers/portal.bash'
   touch foo.text
   git add .
   git commit -m "work in progress"
-  run test_portal push -v
+  run test_portal push
   assert_success
 
   run git cherry -v
@@ -56,8 +60,26 @@ load './test_helpers/portal.bash'
   assert_output -p "work in progress"
 }
 
+@test "push: stashes changes for safe-keeping" {
+  skip
+
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+
+  pushd clone1
+  touch foobar.text
+  run test_portal push
+  assert_success
+
+  run git stash list -n 1
+  assert_output -p "portal"
+}
+
 pull_validation() {
   @test "pull: validate found single branch naming strategy" {
+    skip
+
     add_git_duet "clone1" "clone2"
     add_git_together "clone1" "clone2"
 
@@ -73,6 +95,8 @@ pull_validation() {
   }
 
   @test "pull: validate clean index" {
+    skip
+
     cd clone1
     touch foo.text
 
@@ -83,6 +107,8 @@ pull_validation() {
   }
 
   @test "pull: validate existent remote branch" {
+    skip
+
     add_git_duet "clone1" "clone2"
     git_duet "clone1"
     git_duet "clone2"
@@ -95,6 +121,8 @@ pull_validation() {
   }
 
   @test "pull: validate no unpublished work" {
+    skip
+
     cd clone1
     touch foo.text
     git add .
@@ -109,6 +137,8 @@ pull_validation() {
 
 push_validation() {
   @test "push: validate found single branch naming strategy" {
+    skip
+
     add_git_duet "clone1" "clone2"
     add_git_together "clone1" "clone2"
 
@@ -126,6 +156,8 @@ push_validation() {
   }
 
   @test "push: validate nonexistent remote branch" {
+    skip
+
     add_git_duet "clone1" "clone2"
 
     git_duet "clone1"
