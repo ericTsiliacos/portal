@@ -19,7 +19,7 @@ import (
 var version string
 
 type config struct {
-	Portal struct {
+	Meta struct {
 		Version       string `yaml:"version"`
 		WorkingBranch string `yaml:"workingBranch"`
 		Sha           string `yaml:"sha"`
@@ -133,9 +133,9 @@ func main() {
 			_, _ = execute(fmt.Sprintf("git checkout origin/%s -- portal-meta.yml", portalBranch))
 
 			config, _ := getConfiguration()
-			workingBranch := config.Portal.WorkingBranch
-			pusherVersion := config.Portal.Version
-			sha := config.Portal.Sha
+			workingBranch := config.Meta.WorkingBranch
+			pusherVersion := config.Meta.Version
+			sha := config.Meta.Sha
 
 			_, _ = execute("rm portal-meta.yml")
 
@@ -198,9 +198,9 @@ func writePortalMetaData(branch string, sha string, version string) {
 	}
 
 	c := config{}
-	c.Portal.WorkingBranch = branch
-	c.Portal.Sha = sha
-	c.Portal.Version = version
+	c.Meta.WorkingBranch = branch
+	c.Meta.Sha = sha
+	c.Meta.Version = version
 
 	d, err := yaml.Marshal(&c)
 	if err != nil {
