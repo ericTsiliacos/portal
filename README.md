@@ -21,7 +21,7 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 ```brew bundle```
 
 ### Testing
-
+```go test ./...```
 ```bats ./bats```
 
 ### Credit 
