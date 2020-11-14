@@ -18,14 +18,7 @@ Assumsing both pairs have done `git duet <person1> <person2>` or `git-together w
 ### Bats
 Bats is a bash testing framework, used here for integration tests. This can be installed with homebrew.
 
-```brew install bats-core```
-
-```brew tap kaos/shell```
-
-```brew install bats-assert```
-
-```brew install bats-file```
-
+```brew bundle```
 
 ### Testing
 

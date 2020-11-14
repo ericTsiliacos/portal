@@ -17,8 +17,5 @@ jobs:
           go-version: ^1.13
       - run: go test ./...
       - run: brew uninstall bats
-      - run: brew install bats-core
-      - run: brew tap kaos/shell
-      - run: brew install bats-assert
-      - run: brew install bats-file
+      - run: brew bundle
       - run: bats ./bats

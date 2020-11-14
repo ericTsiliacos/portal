@@ -1,0 +1,35 @@
+{
+  "entries": {
+    "brew": {
+      "bats-core": {
+        "version": "1.2.1",
+        "bottle": false
+      },
+      "bats-assert": {
+        "version": "0.3.0",
+        "bottle": false
+      },
+      "bats-file": {
+        "version": "0.1.0",
+        "bottle": false
+      }
+    },
+    "tap": {
+      "kaos/shell": {
+        "revision": "812249461e033305e63f983917503a4b82891fde"
+      }
+    }
+  },
+  "system": {
+    "macos": {
+      "catalina": {
+        "HOMEBREW_VERSION": "2.5.10",
+        "HOMEBREW_PREFIX": "/usr/local",
+        "Homebrew/homebrew-core": "73973fb16e6e7472995b8213450860a2273c6e13",
+        "CLT": "12.0.0.0.1.1595091463",
+        "Xcode": "12.0",
+        "macOS": "10.15.6"
+      }
+    }
+  }
+}
