@@ -182,22 +182,6 @@ func main() {
 	commando.Parse(nil)
 }
 
-func getBoundarySha(remoteTrackingBranch string, currentBranch string) string {
-	revisionBoundaries, _ := execute(fmt.Sprintf("git rev-list --boundary %s..%s", remoteTrackingBranch, currentBranch))
-	if len(revisionBoundaries) > 0 {
-		return parseRefBoundary(revisionBoundaries)
-	} else {
-		currentRev, _ := execute(fmt.Sprintf("git rev-parse %s", currentBranch))
-		cleanCurrentRev := strings.TrimSuffix(currentRev, "\n")
-		return cleanCurrentRev
-	}
-}
-
-func checkCurrentBranchRemoteTracking() error {
-	_, err := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
-	return err
-}
-
 func parseRefBoundary(revisionBoundaries string) string {
 	boundaries := strings.FieldsFunc(revisionBoundaries, func(c rune) bool {
 		return c == '\n'
@@ -243,47 +227,6 @@ func writePortalMetaData(branch string, sha string, version string) {
 		_ = f.Close()
 		return
 	}
-
-}
-
-func getCurrentBranch() string {
-	currentBranch, _ := execute("git rev-parse --abbrev-ref HEAD")
-	cleanCurrentBranch := strings.TrimSuffix(currentBranch, "\n")
-	return cleanCurrentBranch
-}
-
-func getRemoteTrackingBranch() string {
-	remoteTrackingBranch, _ := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
-	cleanRemoteTrackingBranch := strings.TrimSuffix(remoteTrackingBranch, "\n")
-	return cleanRemoteTrackingBranch
-}
-
-func savePatch(remoteTrackingBranch string) {
-	patch, _ := execute(fmt.Sprintf("git format-patch %s --stdout", remoteTrackingBranch))
-	f, _ := os.Create("portal.patch")
-	_, _ = f.WriteString(patch)
-	_ = f.Close()
-}
-
-func gitDuet() []string {
-	author, authorErr := execute("git config --get duet.env.git-author-initials")
-	coauthor, coauthorErr := execute("git config --get duet.env.git-committer-initials")
-
-	if authorErr != nil && coauthorErr != nil {
-		return []string{}
-	}
-
-	return []string{author, coauthor}
-}
-
-func gitTogether() []string {
-	activeAuthors, err := execute("git config --get git-together.active")
-
-	if err != nil {
-		return []string{}
-	}
-
-	return strings.Split(activeAuthors, "+")
 }
 
 func branchNameStrategy() ([]string, error) {
@@ -301,71 +244,6 @@ func branchNameStrategy() ([]string, error) {
 	}
 
 	return findFirst(pairs, nonEmpty), nil
-}
-
-func checkLocalBranchNonExistence(branch string) {
-	command := fmt.Sprintf("git branch --list %s", branch)
-	localBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	if len(localBranch) > 0 {
-		fmt.Println(fmt.Sprintf("local branch %s already exists", branch))
-		os.Exit(1)
-	}
-}
-
-func checkRemoteBranchNonExistence(branch string) {
-	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
-	remoteBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	if len(remoteBranch) > 0 {
-		fmt.Println(fmt.Sprintf("remote branch %s already exists", branch))
-		os.Exit(1)
-	}
-}
-
-func checkRemoteBranchExistence(branch string) {
-	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
-	remoteBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	if len(remoteBranch) == 0 {
-		fmt.Println("nothing to pull!")
-		os.Exit(1)
-	}
-}
-
-func dirtyIndex() bool {
-	command := "git status --porcelain=v1"
-	index, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	indexCount := strings.Count(index, "\n")
-	return indexCount > 0
-}
-
-func unpublishedWork() bool {
-	command := "git status -sb"
-	output, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	return strings.Contains(output, "ahead")
 }
 
 func runner(commands []string, dryRun bool, verbose bool, completionMessage string) {
@@ -497,4 +375,125 @@ func commandFailure(command string, err error) {
 func trimFirstRune(s string) string {
 	_, i := utf8.DecodeRuneInString(s)
 	return s[i:]
+}
+
+func savePatch(remoteTrackingBranch string) {
+	patch, _ := execute(fmt.Sprintf("git format-patch %s --stdout", remoteTrackingBranch))
+	f, _ := os.Create("portal.patch")
+	_, _ = f.WriteString(patch)
+	_ = f.Close()
+}
+
+func getBoundarySha(remoteTrackingBranch string, currentBranch string) string {
+	revisionBoundaries, _ := execute(fmt.Sprintf("git rev-list --boundary %s..%s", remoteTrackingBranch, currentBranch))
+	if len(revisionBoundaries) > 0 {
+		return parseRefBoundary(revisionBoundaries)
+	} else {
+		currentRev, _ := execute(fmt.Sprintf("git rev-parse %s", currentBranch))
+		cleanCurrentRev := strings.TrimSuffix(currentRev, "\n")
+		return cleanCurrentRev
+	}
+}
+
+func checkCurrentBranchRemoteTracking() error {
+	_, err := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
+	return err
+}
+
+func getCurrentBranch() string {
+	currentBranch, _ := execute("git rev-parse --abbrev-ref HEAD")
+	cleanCurrentBranch := strings.TrimSuffix(currentBranch, "\n")
+	return cleanCurrentBranch
+}
+
+func getRemoteTrackingBranch() string {
+	remoteTrackingBranch, _ := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
+	cleanRemoteTrackingBranch := strings.TrimSuffix(remoteTrackingBranch, "\n")
+	return cleanRemoteTrackingBranch
+}
+
+func gitDuet() []string {
+	author, authorErr := execute("git config --get duet.env.git-author-initials")
+	coauthor, coauthorErr := execute("git config --get duet.env.git-committer-initials")
+
+	if authorErr != nil && coauthorErr != nil {
+		return []string{}
+	}
+
+	return []string{author, coauthor}
+}
+
+func gitTogether() []string {
+	activeAuthors, err := execute("git config --get git-together.active")
+
+	if err != nil {
+		return []string{}
+	}
+
+	return strings.Split(activeAuthors, "+")
+}
+
+func checkLocalBranchNonExistence(branch string) {
+	command := fmt.Sprintf("git branch --list %s", branch)
+	localBranch, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	if len(localBranch) > 0 {
+		fmt.Println(fmt.Sprintf("local branch %s already exists", branch))
+		os.Exit(1)
+	}
+}
+
+func checkRemoteBranchNonExistence(branch string) {
+	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
+	remoteBranch, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	if len(remoteBranch) > 0 {
+		fmt.Println(fmt.Sprintf("remote branch %s already exists", branch))
+		os.Exit(1)
+	}
+}
+
+func checkRemoteBranchExistence(branch string) {
+	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
+	remoteBranch, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	if len(remoteBranch) == 0 {
+		fmt.Println("nothing to pull!")
+		os.Exit(1)
+	}
+}
+
+func dirtyIndex() bool {
+	command := "git status --porcelain=v1"
+	index, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	indexCount := strings.Count(index, "\n")
+	return indexCount > 0
+}
+
+func unpublishedWork() bool {
+	command := "git status -sb"
+	output, err := execute(command)
+
+	if err != nil {
+		commandFailure(command, err)
+	}
+
+	return strings.Contains(output, "ahead")
 }
