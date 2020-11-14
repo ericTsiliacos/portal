@@ -36,10 +36,8 @@ func main() {
 		Register("push").
 		SetShortDescription("push work-in-progress to pair").
 		SetDescription("This command pushes work-in-progress to a branch for your pair to pull.").
-		AddFlag("dry-run,n", "list of commands to run side-effects free", commando.Bool, false).
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
 			if !dirtyIndex() && !unpublishedWork() {
@@ -88,17 +86,15 @@ func main() {
 				fmt.Sprintf("git reset --hard %s", remoteTrackingBranch),
 			}
 
-			runner(commands, dryRun, verbose, "✨ Sent!")
+			runner(commands, verbose, "✨ Sent!")
 		})
 
 	commando.
 		Register("pull").
 		SetShortDescription("pull work-in-progress from pair").
 		SetDescription("This command pulls work-in-progress from your pair.").
-		AddFlag("dry-run,n", "list of commands to run side-effects free", commando.Bool, false).
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			dryRun, _ := flags["dry-run"].GetBool()
 			verbose, _ := flags["verbose"].GetBool()
 
 			err := checkCurrentBranchRemoteTracking()
@@ -176,7 +172,7 @@ func main() {
 				"echo done",
 			}
 
-			runner(commands, dryRun, verbose, "✨ Got it!")
+			runner(commands, verbose, "✨ Got it!")
 		})
 
 	commando.Parse(nil)
@@ -246,20 +242,16 @@ func branchNameStrategy() ([]string, error) {
 	return findFirst(pairs, nonEmpty), nil
 }
 
-func runner(commands []string, dryRun bool, verbose bool, completionMessage string) {
-	if dryRun == true {
-		runDry(commands)
+func runner(commands []string, verbose bool, completionMessage string) {
+	if verbose == true {
+		run(commands, verbose)
 	} else {
-		if verbose == true {
+		style(func() {
 			run(commands, verbose)
-		} else {
-			style(func() {
-				run(commands, verbose)
-			})
-		}
-
-		fmt.Println(completionMessage)
+		})
 	}
+
+	fmt.Println(completionMessage)
 }
 
 type terminal func()
@@ -288,12 +280,6 @@ func run(commands []string, verbose bool) {
 		if verbose == true {
 			fmt.Println(output)
 		}
-	}
-}
-
-func runDry(commands []string) {
-	for _, command := range commands {
-		fmt.Println(command)
 	}
 }
 
