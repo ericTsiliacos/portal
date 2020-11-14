@@ -42,6 +42,7 @@ load './test_helpers/portal.bash'
   touch foo.text
   git add .
   git commit -m "work in progress"
+  touch bar.text
   run test_portal push
   assert_success
 
@@ -55,6 +56,8 @@ load './test_helpers/portal.bash'
 
   run git cherry -v
   assert_output -p "work in progress"
+  assert_file_exist bar.text
+
 }
 
 @test "push/pull: when puller is ahead of pusher against origin" {
