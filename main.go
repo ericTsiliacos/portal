@@ -3,7 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/briandowns/spinner"
+	"github.com/ericTsiliacos/portal/logger"
+	"github.com/janeczku/go-spinner"
 	"github.com/thatisuday/commando"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -40,8 +41,17 @@ func main() {
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 			verbose, _ := flags["verbose"].GetBool()
 
-			if !dirtyIndex() && !unpublishedWork() {
-				fmt.Println("nothing to push!")
+			errMessage := ""
+			if !dirtyIndex() && !unpushedCommits() {
+				errMessage = "nothing to push!"
+			}
+
+			if currentBranchRemotelyUntracked() {
+				errMessage = "Only branches with remote tracking are pushable"
+			}
+
+			if errMessage != "" {
+				fmt.Println(fmt.Sprintf("🤭 %s", errMessage))
 				os.Exit(1)
 			}
 
@@ -53,11 +63,6 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			if currentBranchRemotelyUntracked() {
-				fmt.Println("Only branches with remote tracking are pushable")
-				os.Exit(1)
-			}
-
 			if localBranchExists(portalBranch) {
 				fmt.Println(fmt.Sprintf("local branch %s already exists", portalBranch))
 				os.Exit(1)
@@ -67,6 +72,11 @@ func main() {
 				fmt.Println(fmt.Sprintf("remote branch %s already exists", portalBranch))
 				os.Exit(1)
 			}
+
+			s := spinner.NewSpinner("Coming your way...")
+			s.SetSpeed(100 * time.Millisecond)
+			s.SetCharset([]string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"})
+			s.Start()
 
 			currentBranch := getCurrentBranch()
 
@@ -92,7 +102,9 @@ func main() {
 				fmt.Sprintf("git reset --hard %s", remoteTrackingBranch),
 			}
 
-			runner(commands, verbose, "✨ Sent!")
+			run(commands, verbose)
+			s.Stop()
+			fmt.Println("✨ Sent!")
 		})
 
 	commando.
@@ -110,7 +122,7 @@ func main() {
 
 			startingBranch := getCurrentBranch()
 
-			if dirtyIndex() || unpublishedWork() {
+			if dirtyIndex() || unpushedCommits() {
 				fmt.Println(fmt.Sprintf("%s: git index dirty!", startingBranch))
 				os.Exit(1)
 			}
@@ -162,7 +174,8 @@ func main() {
 				"echo done",
 			}
 
-			runner(commands, verbose, "✨ Got it!")
+			run(commands, verbose)
+			fmt.Println("✨ Sent!")
 		})
 
 	commando.Parse(nil)
@@ -230,30 +243,6 @@ func branchNameStrategy() ([]string, error) {
 	}
 
 	return findFirst(pairs, nonEmpty), nil
-}
-
-func runner(commands []string, verbose bool, completionMessage string) {
-	if verbose == true {
-		run(commands, verbose)
-	} else {
-		style(func() {
-			run(commands, verbose)
-		})
-	}
-
-	fmt.Println(completionMessage)
-}
-
-type terminal func()
-
-func style(fn terminal) {
-	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
-	s.Suffix = " Coming your way..."
-	s.Start()
-
-	fn()
-
-	s.Stop()
 }
 
 func run(commands []string, verbose bool) {
@@ -336,10 +325,20 @@ func nonEmpty(xs []string) bool {
 }
 
 func execute(command string) (string, error) {
+	logger.Log.Println(command)
+
 	s := strings.Split(command, " ")
 	cmd, args := s[0], s[1:]
 	cmdOut, err := exec.Command(cmd, args...).CombinedOutput()
-	return string(cmdOut), err
+	output := string(cmdOut)
+
+	logger.Log.Println(output)
+
+	if err != nil {
+		logger.Log.Println(err)
+	}
+
+	return output, err
 }
 
 func commandFailure(command string, err error) {
@@ -433,6 +432,7 @@ func remoteBranchExists(branch string) bool {
 
 func dirtyIndex() bool {
 	command := "git status --porcelain=v1"
+
 	index, err := execute(command)
 
 	if err != nil {
@@ -443,7 +443,7 @@ func dirtyIndex() bool {
 	return indexCount > 0
 }
 
-func unpublishedWork() bool {
+func unpushedCommits() bool {
 	command := "git status -sb"
 	output, err := execute(command)
 
