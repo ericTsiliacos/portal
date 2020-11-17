@@ -3,9 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/briandowns/spinner"
-	"github.com/thatisuday/commando"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +11,10 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/briandowns/spinner"
+	"github.com/thatisuday/commando"
+	"gopkg.in/yaml.v2"
 )
 
 var version string
