@@ -45,6 +45,11 @@ func main() {
 				os.Exit(1)
 			}
 
+			if currentBranchRemotelyUntracked() {
+				fmt.Println("Only branches with remote tracking are pushable")
+				os.Exit(1)
+			}
+
 			branchStrategy, err := branchNameStrategy()
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
@@ -53,14 +58,15 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			err = checkCurrentBranchRemoteTracking()
-			if err != nil {
-				fmt.Println("Only branches with remote tracking are pushable")
+			if localBranchExists(portalBranch) {
+				fmt.Println(fmt.Sprintf("local branch %s already exists", portalBranch))
 				os.Exit(1)
 			}
 
-			checkLocalBranchNonExistence(portalBranch)
-			checkRemoteBranchNonExistence(portalBranch)
+			if remoteBranchExists(portalBranch) {
+				fmt.Println(fmt.Sprintf("remote branch %s already exists", portalBranch))
+				os.Exit(1)
+			}
 
 			currentBranch := getCurrentBranch()
 
@@ -97,8 +103,7 @@ func main() {
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 			verbose, _ := flags["verbose"].GetBool()
 
-			err := checkCurrentBranchRemoteTracking()
-			if err != nil {
+			if currentBranchRemotelyUntracked() {
 				fmt.Println("Must be on a branch that is remotely tracked.")
 				os.Exit(1)
 			}
@@ -118,36 +123,21 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			checkRemoteBranchExistence(portalBranch)
-
-			_, err = execute("git fetch")
-			if err != nil {
-				fmt.Println("failed fetch")
+			if !remoteBranchExists(portalBranch) {
+				fmt.Println("nothing to pull!")
 				os.Exit(1)
 			}
 
-			_, err = execute("git pull -r")
-			if err != nil {
-				fmt.Println("failed to pull rebase")
-				os.Exit(1)
-			}
-
-			_, err = execute(fmt.Sprintf("git checkout origin/%s -- portal-meta.yml", portalBranch))
-			if err != nil {
-				fmt.Println("failed to checkout meta file")
-				os.Exit(1)
-			}
+			_, _ = execute("git fetch")
+			_, _ = execute("git pull -r")
+			_, _ = execute(fmt.Sprintf("git checkout origin/%s -- portal-meta.yml", portalBranch))
 
 			config, _ := getConfiguration()
 			workingBranch := config.Meta.WorkingBranch
 			pusherVersion := config.Meta.Version
 			sha := config.Meta.Sha
 
-			_, err = execute("rm portal-meta.yml")
-			if err != nil {
-				fmt.Println("failed to delete meta file")
-				os.Exit(1)
-			}
+			_, _ = execute("rm portal-meta.yml")
 
 			if pusherVersion != version {
 				fmt.Println("Pusher and Puller are using different versions of portal")
@@ -162,11 +152,11 @@ func main() {
 				os.Exit(1)
 			}
 
-			execute(fmt.Sprintf("git reset --hard %s", sha))
-			execute(fmt.Sprintf("git rebase origin/%s", portalBranch))
-			execute("git reset HEAD^^")
-			execute("rm portal-meta.yml")
-			execute(fmt.Sprintf("git push origin --delete %s", portalBranch))
+			_, _ = execute(fmt.Sprintf("git reset --hard %s", sha))
+			_, _ = execute(fmt.Sprintf("git rebase origin/%s", portalBranch))
+			_, _ = execute("git reset HEAD^^")
+			_, _ = execute("rm portal-meta.yml")
+			_, _ = execute(fmt.Sprintf("git push origin --delete %s", portalBranch))
 
 			commands := []string{
 				"echo done",
@@ -189,9 +179,9 @@ func getBoundarySha(remoteTrackingBranch string, currentBranch string) string {
 	}
 }
 
-func checkCurrentBranchRemoteTracking() error {
+func currentBranchRemotelyUntracked() bool {
 	_, err := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
-	return err
+	return err != nil
 }
 
 func parseRefBoundary(revisionBoundaries string) string {
@@ -299,7 +289,7 @@ func branchNameStrategy() ([]string, error) {
 	return findFirst(pairs, nonEmpty), nil
 }
 
-func checkLocalBranchNonExistence(branch string) {
+func localBranchExists(branch string) bool {
 	command := fmt.Sprintf("git branch --list %s", branch)
 	localBranch, err := execute(command)
 
@@ -307,13 +297,10 @@ func checkLocalBranchNonExistence(branch string) {
 		commandFailure(command, err)
 	}
 
-	if len(localBranch) > 0 {
-		fmt.Println(fmt.Sprintf("local branch %s already exists", branch))
-		os.Exit(1)
-	}
+	return len(localBranch) > 0
 }
 
-func checkRemoteBranchNonExistence(branch string) {
+func remoteBranchExists(branch string) bool {
 	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
 	remoteBranch, err := execute(command)
 
@@ -321,24 +308,7 @@ func checkRemoteBranchNonExistence(branch string) {
 		commandFailure(command, err)
 	}
 
-	if len(remoteBranch) > 0 {
-		fmt.Println(fmt.Sprintf("remote branch %s already exists", branch))
-		os.Exit(1)
-	}
-}
-
-func checkRemoteBranchExistence(branch string) {
-	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
-	remoteBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	if len(remoteBranch) == 0 {
-		fmt.Println("nothing to pull!")
-		os.Exit(1)
-	}
+	return len(remoteBranch) > 0
 }
 
 func dirtyIndex() bool {
