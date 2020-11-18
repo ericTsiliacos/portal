@@ -115,6 +115,10 @@ func fetch() (string, error) {
 	return execute("git fetch")
 }
 
+func showFile(branch string, fileName string) (string, error) {
+	return execute(fmt.Sprintf("git show origin/%s:%s", branch, fileName))
+}
+
 func rebase() (string, error) {
 	return execute("git pull -r")
 }

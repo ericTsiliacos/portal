@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"sort"
@@ -43,6 +42,9 @@ func main() {
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+
+			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
+
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
@@ -109,6 +111,9 @@ func main() {
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+
+			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
+
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
@@ -138,18 +143,13 @@ func main() {
 			}
 
 			_, _ = fetch()
-			_, _ = rebase()
 
-			metaFilename := "portal-meta.yml"
-			_, _ = checkoutFile(portalBranch, metaFilename)
-
-			config, _ := getConfiguration()
+			metaFileContents, _ := showFile(portalBranch, "portal-meta.yml")
+			config, _ := getConfiguration(metaFileContents)
 			workingBranch := config.Meta.WorkingBranch
 			pusherVersion := semver.Canonical(config.Meta.Version)
 			sha := config.Meta.Sha
 			currentVersion := semver.Canonical(version)
-
-			_, _ = removeFile(metaFilename)
 
 			if semver.Major(pusherVersion) != semver.Major(currentVersion) {
 				fmt.Println("Pusher and Puller are using different versions of portal")
@@ -165,6 +165,7 @@ func main() {
 			}
 
 			commands := []string{
+				fmt.Sprintf("git rebase origin/%s", workingBranch),
 				fmt.Sprintf("git reset --hard %s", sha),
 				fmt.Sprintf("git rebase origin/%s~1", portalBranch),
 				"git reset HEAD^",
@@ -185,13 +186,9 @@ func parseRefBoundary(revisionBoundaries string) string {
 	return trimFirstRune(boundaries[len(boundaries)-1])
 }
 
-func getConfiguration() (*config, error) {
-	yamlFile, err := ioutil.ReadFile("portal-meta.yml")
-	if err != nil {
-		log.Printf("yamlFile.Get err   #%v ", err)
-	}
+func getConfiguration(yamlContent string) (*config, error) {
 	c := &config{}
-	err = yaml.Unmarshal(yamlFile, c)
+	err := yaml.Unmarshal([]byte(yamlContent), c)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
