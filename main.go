@@ -6,11 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"sort"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
@@ -76,14 +74,15 @@ func main() {
 
 			sha := getBoundarySha(remoteTrackingBranch, currentBranch)
 
-			_, _ = execute("git add .")
-			_, _ = execute("git commit --allow-empty -m portal-wip")
+			_, _ = addAll(".")
+			_, _ = commit("portal-wip")
+
 			now := time.Now().Format(time.RFC3339)
 			savePatch(remoteTrackingBranch, now)
 
 			writePortalMetaData(currentBranch, sha, version)
-			_, _ = execute("git add portal-meta.yml")
-			_, _ = execute("git commit --allow-empty -m portal-meta")
+			_, _ = addAll("portal-meta.yml")
+			_, _ = commit("portal-meta")
 
 			commands := []string{
 				fmt.Sprintf("git stash save \"portal-patch-%s\" --include-untracked", now),
@@ -171,22 +170,6 @@ func main() {
 	commando.Parse(nil)
 }
 
-func getBoundarySha(remoteTrackingBranch string, currentBranch string) string {
-	revisionBoundaries, _ := execute(fmt.Sprintf("git rev-list --boundary %s..%s", remoteTrackingBranch, currentBranch))
-	if len(revisionBoundaries) > 0 {
-		return parseRefBoundary(revisionBoundaries)
-	} else {
-		currentRev, _ := execute(fmt.Sprintf("git rev-parse %s", currentBranch))
-		cleanCurrentRev := strings.TrimSuffix(currentRev, "\n")
-		return cleanCurrentRev
-	}
-}
-
-func currentBranchRemotelyUntracked() bool {
-	_, err := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
-	return err != nil
-}
-
 func parseRefBoundary(revisionBoundaries string) string {
 	boundaries := strings.FieldsFunc(revisionBoundaries, func(c rune) bool {
 		return c == '\n'
@@ -235,20 +218,8 @@ func writePortalMetaData(branch string, sha string, version string) {
 
 }
 
-func getCurrentBranch() string {
-	currentBranch, _ := execute("git rev-parse --abbrev-ref HEAD")
-	cleanCurrentBranch := strings.TrimSuffix(currentBranch, "\n")
-	return cleanCurrentBranch
-}
-
-func getRemoteTrackingBranch() string {
-	remoteTrackingBranch, _ := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
-	cleanRemoteTrackingBranch := strings.TrimSuffix(remoteTrackingBranch, "\n")
-	return cleanRemoteTrackingBranch
-}
-
 func savePatch(remoteTrackingBranch string, dateTime string) {
-	patch, _ := execute(fmt.Sprintf("git format-patch %s --stdout", remoteTrackingBranch))
+	patch, _ := buildPatch(remoteTrackingBranch)
 	f, _ := os.Create(buildPatchFileName(dateTime))
 	_, _ = f.WriteString(patch)
 	_ = f.Close()
@@ -256,27 +227,6 @@ func savePatch(remoteTrackingBranch string, dateTime string) {
 
 func buildPatchFileName(dateTime string) string {
 	return fmt.Sprintf("portal-%s.patch", dateTime)
-}
-
-func gitDuet() []string {
-	author, authorErr := execute("git config --get duet.env.git-author-initials")
-	coauthor, coauthorErr := execute("git config --get duet.env.git-committer-initials")
-
-	if authorErr != nil && coauthorErr != nil {
-		return []string{}
-	}
-
-	return []string{author, coauthor}
-}
-
-func gitTogether() []string {
-	activeAuthors, err := execute("git config --get git-together.active")
-
-	if err != nil {
-		return []string{}
-	}
-
-	return strings.Split(activeAuthors, "+")
 }
 
 func branchNameStrategy() ([]string, error) {
@@ -294,51 +244,6 @@ func branchNameStrategy() ([]string, error) {
 	}
 
 	return findFirst(pairs, nonEmpty), nil
-}
-
-func localBranchExists(branch string) bool {
-	command := fmt.Sprintf("git branch --list %s", branch)
-	localBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	return len(localBranch) > 0
-}
-
-func remoteBranchExists(branch string) bool {
-	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
-	remoteBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	return len(remoteBranch) > 0
-}
-
-func dirtyIndex() bool {
-	command := "git status --porcelain=v1"
-	index, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	indexCount := strings.Count(index, "\n")
-	return indexCount > 0
-}
-
-func unpublishedWork() bool {
-	command := "git status -sb"
-	output, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
-
-	return strings.Contains(output, "ahead")
 }
 
 func runner(commands []string, verbose bool, completionMessage string) {
@@ -399,71 +304,4 @@ func getPortalBranch(authors []string) string {
 
 func portal(branchName string) string {
 	return "portal-" + branchName
-}
-
-func Map(vs []string, f func(string) string) []string {
-	vsm := make([]string, len(vs))
-	for i, v := range vs {
-		vsm[i] = f(v)
-	}
-	return vsm
-}
-
-func all(xxs [][]string, f func(xs []string) bool) bool {
-	for _, xs := range xxs {
-		if f(xs) == false {
-			return false
-		}
-	}
-	return true
-}
-
-func many(xxs [][]string, f func(xs []string) bool) bool {
-	seen := false
-	for _, xs := range xxs {
-		if seen && f(xs) {
-			return true
-		} else if f(xs) {
-			seen = true
-		} else {
-			continue
-		}
-	}
-	return false
-}
-
-func findFirst(xxs [][]string, f func(xs []string) bool) []string {
-	for i, xs := range xxs {
-		if f(xs) == true {
-			return xxs[i]
-		}
-	}
-
-	return nil
-}
-
-func empty(xs []string) bool {
-	return len(xs) == 0
-}
-
-func nonEmpty(xs []string) bool {
-	return len(xs) != 0
-}
-
-func execute(command string) (string, error) {
-	s := strings.Split(command, " ")
-	cmd, args := s[0], s[1:]
-	cmdOut, err := exec.Command(cmd, args...).CombinedOutput()
-	return string(cmdOut), err
-}
-
-func commandFailure(command string, err error) {
-	fmt.Println(command)
-	_, _ = fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
-}
-
-func trimFirstRune(s string) string {
-	_, i := utf8.DecodeRuneInString(s)
-	return s[i:]
 }
