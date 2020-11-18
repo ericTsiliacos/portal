@@ -110,3 +110,15 @@ func addAll(files string) (string, error) {
 func commit(message string) (string, error) {
 	return execute(fmt.Sprintf("git commit --allow-empty -m %s", message))
 }
+
+func fetch() (string, error) {
+	return execute("git fetch")
+}
+
+func rebase() (string, error) {
+	return execute("git pull -r")
+}
+
+func checkoutFile(branch string, filename string) (string, error) {
+	return execute(fmt.Sprintf("git checkout origin/%s -- %s", branch, filename))
+}

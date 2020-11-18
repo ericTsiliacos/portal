@@ -89,8 +89,8 @@ func main() {
 				fmt.Sprintf("git checkout -b %s --progress", portalBranch),
 				fmt.Sprintf("git push origin %s --progress", portalBranch),
 				fmt.Sprintf("git checkout %s --progress", currentBranch),
-				fmt.Sprintf("git branch -D %s", portalBranch),
 				fmt.Sprintf("git reset --hard %s", remoteTrackingBranch),
+				fmt.Sprintf("git branch -D %s", portalBranch),
 			}
 
 			runner(commands, verbose, "✨ Sent!")
@@ -129,9 +129,11 @@ func main() {
 				os.Exit(1)
 			}
 
-			_, _ = execute("git fetch")
-			_, _ = execute("git pull -r")
-			_, _ = execute(fmt.Sprintf("git checkout origin/%s -- portal-meta.yml", portalBranch))
+			_, _ = fetch()
+			_, _ = rebase()
+
+			metaFilename := "portal-meta.yml"
+			_, _ = checkoutFile(portalBranch, metaFilename)
 
 			config, _ := getConfiguration()
 			workingBranch := config.Meta.WorkingBranch
@@ -139,7 +141,7 @@ func main() {
 			sha := config.Meta.Sha
 			currentVersion := semver.Canonical(version)
 
-			_, _ = execute("rm portal-meta.yml")
+			_, _ = removeFile(metaFilename)
 
 			if semver.Major(pusherVersion) != semver.Major(currentVersion) {
 				fmt.Println("Pusher and Puller are using different versions of portal")
@@ -154,14 +156,11 @@ func main() {
 				os.Exit(1)
 			}
 
-			_, _ = execute(fmt.Sprintf("git reset --hard %s", sha))
-			_, _ = execute(fmt.Sprintf("git rebase origin/%s", portalBranch))
-			_, _ = execute("git reset HEAD^^")
-			_, _ = execute("rm portal-meta.yml")
-			_, _ = execute(fmt.Sprintf("git push origin --delete %s", portalBranch))
-
 			commands := []string{
-				"echo done",
+				fmt.Sprintf("git reset --hard %s", sha),
+				fmt.Sprintf("git rebase origin/%s~1", portalBranch),
+				"git reset HEAD^",
+				fmt.Sprintf("git push origin --delete %s", portalBranch),
 			}
 
 			runner(commands, verbose, "✨ Got it!")
@@ -304,4 +303,8 @@ func getPortalBranch(authors []string) string {
 
 func portal(branchName string) string {
 	return "portal-" + branchName
+}
+
+func removeFile(filename string) (string, error) {
+	return execute(fmt.Sprintf("rm %s", filename))
 }
