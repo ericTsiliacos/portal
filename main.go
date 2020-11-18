@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/ericTsiliacos/portal/logger"
 	"github.com/thatisuday/commando"
 	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v2"
@@ -27,6 +28,9 @@ type config struct {
 }
 
 func main() {
+
+	defer logger.CloseLogOutput()
+
 	commando.
 		SetExecutableName("portal").
 		SetVersion(version).
