@@ -1,6 +1,6 @@
 go_build_portal() {
-  go build -ldflags "-X main.version=v1" -o "$BATS_TMPDIR"/bin/test_portal
-  go build -ldflags "-X main.version=v2" -o "$BATS_TMPDIR"/bin/test_portal_v2
+  go build -ldflags "-X main.version=v1.0.1" -o "$BATS_TMPDIR"/bin/test_portal
+  go build -ldflags "-X main.version=v2.0.2" -o "$BATS_TMPDIR"/bin/test_portal_v2
 }
 
 portal_push() {

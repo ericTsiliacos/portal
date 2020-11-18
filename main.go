@@ -14,6 +14,7 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/thatisuday/commando"
+	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v2"
 )
 
@@ -135,12 +136,13 @@ func main() {
 
 			config, _ := getConfiguration()
 			workingBranch := config.Meta.WorkingBranch
-			pusherVersion := config.Meta.Version
+			pusherVersion := semver.Canonical(config.Meta.Version)
 			sha := config.Meta.Sha
+			currentVersion := semver.Canonical(version)
 
 			_, _ = execute("rm portal-meta.yml")
 
-			if pusherVersion != version {
+			if semver.Major(pusherVersion) != semver.Major(currentVersion) {
 				fmt.Println("Pusher and Puller are using different versions of portal")
 				fmt.Println("  1. Pusher run portal pull to retrieve changes.")
 				fmt.Println("  2. Both pairs update to latest version of portal.")
