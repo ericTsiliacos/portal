@@ -114,10 +114,10 @@ load './test_helpers/portal.bash'
   assert_success
 
   run git stash list -n 1
-  assert_output -p "portal-save-patch"
+  assert_output -p "portal-patch-"
 
   git stash pop
-  git am portal.patch
+  git am *.patch
 
   git reset HEAD^
 

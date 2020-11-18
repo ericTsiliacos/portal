@@ -77,15 +77,15 @@ func main() {
 
 			_, _ = execute("git add .")
 			_, _ = execute("git commit --allow-empty -m portal-wip")
-
-			savePatch(remoteTrackingBranch)
+			now := time.Now().Format(time.RFC3339)
+			savePatch(remoteTrackingBranch, now)
 
 			writePortalMetaData(currentBranch, sha, version)
 			_, _ = execute("git add portal-meta.yml")
 			_, _ = execute("git commit --allow-empty -m portal-meta")
 
 			commands := []string{
-				"git stash save \"portal-save-patch\" --include-untracked",
+				fmt.Sprintf("git stash save \"portal-patch-%s\" --include-untracked", now),
 				fmt.Sprintf("git checkout -b %s --progress", portalBranch),
 				fmt.Sprintf("git push origin %s --progress", portalBranch),
 				fmt.Sprintf("git checkout %s --progress", currentBranch),
@@ -245,11 +245,15 @@ func getRemoteTrackingBranch() string {
 	return cleanRemoteTrackingBranch
 }
 
-func savePatch(remoteTrackingBranch string) {
+func savePatch(remoteTrackingBranch string, dateTime string) {
 	patch, _ := execute(fmt.Sprintf("git format-patch %s --stdout", remoteTrackingBranch))
-	f, _ := os.Create("portal.patch")
+	f, _ := os.Create(buildPatchFileName(dateTime))
 	_, _ = f.WriteString(patch)
 	_ = f.Close()
+}
+
+func buildPatchFileName(dateTime string) string {
+	return fmt.Sprintf("portal-%s.patch", dateTime)
 }
 
 func gitDuet() []string {
