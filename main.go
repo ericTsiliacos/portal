@@ -169,7 +169,7 @@ func main() {
 				fmt.Sprintf("git reset --hard %s", sha),
 				fmt.Sprintf("git rebase origin/%s~1", portalBranch),
 				"git reset HEAD^",
-				fmt.Sprintf("git push origin --delete %s", portalBranch),
+				fmt.Sprintf("git push origin --delete %s --progress", portalBranch),
 			}
 
 			runner(commands, verbose, "✨ Got it!")
