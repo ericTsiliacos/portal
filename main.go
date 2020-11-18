@@ -37,8 +37,10 @@ func main() {
 		SetShortDescription("push work-in-progress to pair").
 		SetDescription("This command pushes work-in-progress to a branch for your pair to pull.").
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
+		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 			verbose, _ := flags["verbose"].GetBool()
+			strategy, _ := flags["strategy"].GetString()
 
 			if !dirtyIndex() && !unpublishedWork() {
 				fmt.Println("nothing to push!")
@@ -50,7 +52,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			branchStrategy, err := branchNameStrategy()
+			branchStrategy, err := branchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
@@ -101,8 +103,10 @@ func main() {
 		SetShortDescription("pull work-in-progress from pair").
 		SetDescription("This command pulls work-in-progress from your pair.").
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
+		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 			verbose, _ := flags["verbose"].GetBool()
+			strategy, _ := flags["strategy"].GetString()
 
 			if currentBranchRemotelyUntracked() {
 				fmt.Println("Must be on a branch that is remotely tracked.")
@@ -116,7 +120,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			branchStrategy, err := branchNameStrategy()
+			branchStrategy, err := branchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
@@ -228,7 +232,21 @@ func buildPatchFileName(dateTime string) string {
 	return fmt.Sprintf("portal-%s.patch", dateTime)
 }
 
-func branchNameStrategy() ([]string, error) {
+func branchNameStrategy(strategy string) ([]string, error) {
+	strategies := map[string]interface{}{
+		"git-duet":     gitDuet,
+		"git-together": gitTogether,
+	}
+
+	if strategy != "auto" {
+		fn, ok := strategies[strategy]
+		if !ok {
+			return nil, errors.New("unknown strategy")
+		} else {
+			return fn.(func() []string)(), nil
+		}
+	}
+
 	pairs := [][]string{
 		gitDuet(),
 		gitTogether(),

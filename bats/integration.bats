@@ -127,6 +127,52 @@ load './test_helpers/portal.bash'
   assert_file_exist bar.text
 }
 
+@test "push/pull: option to provide branch naming strategy" {
+  add_git_duet "clone1" "clone2"
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+  git_duet "clone1"
+
+  pushd "clone1" || exit
+
+  touch foo.text
+
+  run test_portal push
+
+  assert_failure
+  assert_output "Error: multiple branch naming strategies found"
+
+  run test_portal push -s git-duet
+  assert_success
+  popd
+
+  pushd "clone1" || exit
+
+  run test_portal pull
+  assert_failure
+  assert_output "Error: multiple branch naming strategies found"
+
+  run test_portal pull -s git-duet
+  assert_success
+}
+
+@test "push/pull: validate branch naming strategy option" {
+  add_git_duet "clone1" "clone2"
+  add_git_together "clone1" "clone2"
+
+  git_together "clone1"
+  git_duet "clone1"
+
+  pushd "clone1" || exit
+
+  touch foo.text
+
+  run test_portal push --strategy wrong
+  assert_failure
+  assert_output "Error: unknown strategy"
+}
+
 push_validation() {
   @test "push: validate dirty workspace" {
     cd clone1
@@ -164,6 +210,9 @@ push_validation() {
 
     assert_failure
     assert_output "Error: multiple branch naming strategies found"
+
+    run test_portal push -s git-duet
+    assert_success
   }
 
   @test "push: validate local portal branch nonexistent" {
