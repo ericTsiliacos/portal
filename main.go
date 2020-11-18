@@ -48,15 +48,15 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			if !dirtyIndex() && !unpublishedWork() {
-				fmt.Println("nothing to push!")
-				os.Exit(1)
-			}
+			validate(
+				dirtyIndex() || unpublishedWork(),
+				"nothing to push!",
+			)
 
-			if currentBranchRemotelyUntracked() {
-				fmt.Println("Only branches with remote tracking are pushable")
-				os.Exit(1)
-			}
+			validate(
+				currentBranchRemotelyTracked(),
+				"Only branches with remote tracking are pushable",
+			)
 
 			branchStrategy, err := branchNameStrategy(strategy)
 			if err != nil {
@@ -66,15 +66,15 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			if localBranchExists(portalBranch) {
-				fmt.Println(fmt.Sprintf("local branch %s already exists", portalBranch))
-				os.Exit(1)
-			}
+			validate(
+				!localBranchExists(portalBranch),
+				fmt.Sprintf("local branch %s already exists", portalBranch),
+			)
 
-			if remoteBranchExists(portalBranch) {
-				fmt.Println(fmt.Sprintf("remote branch %s already exists", portalBranch))
-				os.Exit(1)
-			}
+			validate(
+				!remoteBranchExists(portalBranch),
+				fmt.Sprintf("remote branch %s already exists", portalBranch),
+			)
 
 			currentBranch := getCurrentBranch()
 
@@ -117,17 +117,17 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			if currentBranchRemotelyUntracked() {
-				fmt.Println("Must be on a branch that is remotely tracked.")
-				os.Exit(1)
-			}
+			validate(
+				currentBranchRemotelyTracked(),
+				"Must be on a branch that is remotely tracked.",
+			)
 
 			startingBranch := getCurrentBranch()
 
-			if dirtyIndex() || unpublishedWork() {
-				fmt.Println(fmt.Sprintf("%s: git index dirty!", startingBranch))
-				os.Exit(1)
-			}
+			validate(
+				!dirtyIndex() && !unpublishedWork(),
+				fmt.Sprintf("%s: git index dirty!", startingBranch),
+			)
 
 			branchStrategy, err := branchNameStrategy(strategy)
 			if err != nil {
@@ -137,10 +137,10 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			if !remoteBranchExists(portalBranch) {
-				fmt.Println("nothing to pull!")
-				os.Exit(1)
-			}
+			validate(
+				remoteBranchExists(portalBranch),
+				"nothing to pull!",
+			)
 
 			_, _ = fetch()
 
@@ -159,10 +159,10 @@ func main() {
 				os.Exit(1)
 			}
 
-			if workingBranch != startingBranch {
-				fmt.Println(fmt.Sprintf("Starting branch %s did not match target branch %s", startingBranch, workingBranch))
-				os.Exit(1)
-			}
+			validate(
+				workingBranch == startingBranch,
+				fmt.Sprintf("Starting branch %s did not match target branch %s", startingBranch, workingBranch),
+			)
 
 			commands := []string{
 				fmt.Sprintf("git rebase origin/%s", workingBranch),
@@ -308,6 +308,13 @@ func run(commands []string, verbose bool) {
 func runDry(commands []string) {
 	for _, command := range commands {
 		fmt.Println(command)
+	}
+}
+
+func validate(valid bool, message string) {
+	if valid == false {
+		fmt.Println(message)
+		os.Exit(1)
 	}
 }
 

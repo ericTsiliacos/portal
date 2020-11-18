@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-func currentBranchRemotelyUntracked() bool {
-	_, err := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
-	return err != nil
+func currentBranchRemotelyTracked() bool {
+	remoteBranch, err := execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
+	return len(remoteBranch) > 0 && err == nil
 }
 
 func dirtyIndex() bool {
