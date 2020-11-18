@@ -26,6 +26,26 @@ type config struct {
 	} `yaml:"Meta"`
 }
 
+const EMPTY_INDEX = "nothing to push!"
+const PORTAL_CLOSED = "nothing to pull!"
+const REMOTE_TRACKING_REQUIRED = "must be on a branch that is remotely tracked"
+
+func LOCAL_BRANCH_EXISTS(branch string) string {
+	return fmt.Sprintf("local branch %s already exists", branch)
+}
+
+func REMOTE_BRANCH_EXISTS(branch string) string {
+	return fmt.Sprintf("remote branch %s already exists", branch)
+}
+
+func DIRTY_INDEX(branch string) string {
+	return fmt.Sprintf("%s: git index dirty!", branch)
+}
+
+func BRANCH_MISMATCH(startingBranch string, workingBranch string) string {
+	return fmt.Sprintf("Starting branch %s did not match target branch %s", startingBranch, workingBranch)
+}
+
 func main() {
 
 	defer logger.CloseLogOutput()
@@ -48,15 +68,8 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			validate(
-				dirtyIndex() || unpublishedWork(),
-				"nothing to push!",
-			)
-
-			validate(
-				currentBranchRemotelyTracked(),
-				"Only branches with remote tracking are pushable",
-			)
+			validate(dirtyIndex() || unpublishedWork(), EMPTY_INDEX)
+			validate(currentBranchRemotelyTracked(), REMOTE_TRACKING_REQUIRED)
 
 			branchStrategy, err := branchNameStrategy(strategy)
 			if err != nil {
@@ -66,15 +79,8 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			validate(
-				!localBranchExists(portalBranch),
-				fmt.Sprintf("local branch %s already exists", portalBranch),
-			)
-
-			validate(
-				!remoteBranchExists(portalBranch),
-				fmt.Sprintf("remote branch %s already exists", portalBranch),
-			)
+			validate(!localBranchExists(portalBranch), LOCAL_BRANCH_EXISTS(portalBranch))
+			validate(!remoteBranchExists(portalBranch), REMOTE_BRANCH_EXISTS(portalBranch))
 
 			currentBranch := getCurrentBranch()
 
@@ -117,17 +123,11 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			validate(
-				currentBranchRemotelyTracked(),
-				"Must be on a branch that is remotely tracked.",
-			)
+			validate(currentBranchRemotelyTracked(), REMOTE_TRACKING_REQUIRED)
 
 			startingBranch := getCurrentBranch()
 
-			validate(
-				!dirtyIndex() && !unpublishedWork(),
-				fmt.Sprintf("%s: git index dirty!", startingBranch),
-			)
+			validate(!dirtyIndex() && !unpublishedWork(), DIRTY_INDEX(startingBranch))
 
 			branchStrategy, err := branchNameStrategy(strategy)
 			if err != nil {
@@ -137,10 +137,7 @@ func main() {
 
 			portalBranch := getPortalBranch(branchStrategy)
 
-			validate(
-				remoteBranchExists(portalBranch),
-				"nothing to pull!",
-			)
+			validate(remoteBranchExists(portalBranch), PORTAL_CLOSED)
 
 			_, _ = fetch()
 
@@ -159,10 +156,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			validate(
-				workingBranch == startingBranch,
-				fmt.Sprintf("Starting branch %s did not match target branch %s", startingBranch, workingBranch),
-			)
+			validate(workingBranch == startingBranch, BRANCH_MISMATCH(startingBranch, workingBranch))
 
 			commands := []string{
 				fmt.Sprintf("git rebase origin/%s", workingBranch),

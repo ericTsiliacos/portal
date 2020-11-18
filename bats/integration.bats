@@ -192,7 +192,7 @@ push_validation() {
 
     run test_portal push
     assert_failure
-    assert_output "Only branches with remote tracking are pushable"
+    assert_output "must be on a branch that is remotely tracked"
   }
 
   @test "push: validate found single branch naming strategy" {
@@ -263,7 +263,7 @@ pull_validation() {
     git checkout -b untracked_branch
     run test_portal pull
     assert_failure
-    assert_output "Must be on a branch that is remotely tracked."
+    assert_output "must be on a branch that is remotely tracked"
   }
 
   @test "pull: validate no present commits" {
