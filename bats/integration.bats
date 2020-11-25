@@ -182,7 +182,7 @@ push_validation() {
     assert_output "nothing to push!"
   }
 
-  @test "push: validate branch is remotely traced" {
+  @test "push: validate branch is remotely tracked" {
     add_git_duet "clone1" "clone2"
     git_duet "clone1"
 
