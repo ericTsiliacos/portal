@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -24,11 +22,4 @@ func execute(command string) (string, error) {
 	}
 
 	return output, err
-}
-
-func commandFailure(command string, err error) {
-	fmt.Println(command)
-	fmt.Println("LogFile: " + logger.LogPath)
-	_, _ = fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
 }

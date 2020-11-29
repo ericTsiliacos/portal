@@ -11,46 +11,26 @@ func currentBranchRemotelyTracked() bool {
 }
 
 func dirtyIndex() bool {
-	command := "git status --porcelain=v1"
-	index, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
+	index := check(execute("git status --porcelain=v1"))
 
 	indexCount := strings.Count(index, "\n")
 	return indexCount > 0
 }
 
 func unpublishedWork() bool {
-	command := "git status -sb"
-	output, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
+	output := check(execute("git status -sb"))
 
 	return strings.Contains(output, "ahead")
 }
 
 func localBranchExists(branch string) bool {
-	command := fmt.Sprintf("git branch --list %s", branch)
-	localBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
+	localBranch := check(execute(fmt.Sprintf("git branch --list %s", branch)))
 
 	return len(localBranch) > 0
 }
 
 func remoteBranchExists(branch string) bool {
-	command := fmt.Sprintf("git ls-remote --heads origin %s", branch)
-	remoteBranch, err := execute(command)
-
-	if err != nil {
-		commandFailure(command, err)
-	}
+	remoteBranch := check(execute(fmt.Sprintf("git ls-remote --heads origin %s", branch)))
 
 	return len(remoteBranch) > 0
 }

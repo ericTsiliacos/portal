@@ -268,11 +268,8 @@ func run(commands []string, verbose bool) {
 		if verbose == true {
 			fmt.Println(command)
 		}
-		output, err := execute(command)
 
-		if err != nil {
-			commandFailure(command, err)
-		}
+		output := check(execute(command))
 
 		if verbose == true {
 			fmt.Println(output)
@@ -308,4 +305,14 @@ func portal(branchName string) string {
 
 func removeFile(filename string) (string, error) {
 	return execute(fmt.Sprintf("rm %s", filename))
+}
+
+func check(output string, err error) string {
+	if err != nil {
+		fmt.Println("LogFile: " + logger.LogPath)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	return output
 }
