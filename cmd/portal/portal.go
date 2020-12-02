@@ -1,34 +1,21 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"log"
 	"os"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
 	"github.com/ericTsiliacos/portal/internal/constants"
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/logger"
+	"github.com/ericTsiliacos/portal/internal/portal"
 	"github.com/ericTsiliacos/portal/internal/shell"
-	"github.com/ericTsiliacos/portal/internal/slices"
 	"github.com/thatisuday/commando"
 	"golang.org/x/mod/semver"
-	"gopkg.in/yaml.v2"
 )
 
 var version string
-
-type config struct {
-	Meta struct {
-		Version       string `yaml:"version"`
-		WorkingBranch string `yaml:"workingBranch"`
-		Sha           string `yaml:"sha"`
-	} `yaml:"Meta"`
-}
 
 func main() {
 
@@ -55,13 +42,13 @@ func main() {
 			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
 			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
 
-			branchStrategy, err := branchNameStrategy(strategy)
+			branchStrategy, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
-			portalBranch := getPortalBranch(branchStrategy)
+			portalBranch := portal.GetPortalBranch(branchStrategy)
 
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
 			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
@@ -76,9 +63,9 @@ func main() {
 			_, _ = git.Commit("portal-wip")
 
 			now := time.Now().Format(time.RFC3339)
-			savePatch(remoteTrackingBranch, now)
+			portal.SavePatch(remoteTrackingBranch, now)
 
-			writePortalMetaData(currentBranch, sha, version)
+			portal.WritePortalMetaData(currentBranch, sha, version)
 			_, _ = git.AddAll("portal-meta.yml")
 			_, _ = git.Commit("portal-meta")
 
@@ -113,20 +100,20 @@ func main() {
 
 			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
-			branchStrategy, err := branchNameStrategy(strategy)
+			branchStrategy, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
-			portalBranch := getPortalBranch(branchStrategy)
+			portalBranch := portal.GetPortalBranch(branchStrategy)
 
 			validate(git.RemoteBranchExists(portalBranch), constants.PORTAL_CLOSED)
 
 			_, _ = git.Fetch()
 
 			metaFileContents, _ := git.ShowFile(portalBranch, "portal-meta.yml")
-			config, _ := getConfiguration(metaFileContents)
+			config, _ := portal.GetConfiguration(metaFileContents)
 			workingBranch := config.Meta.WorkingBranch
 			pusherVersion := semver.Canonical(config.Meta.Version)
 			sha := config.Meta.Sha
@@ -154,84 +141,6 @@ func main() {
 		})
 
 	commando.Parse(nil)
-}
-
-func getConfiguration(yamlContent string) (*config, error) {
-	c := &config{}
-	err := yaml.Unmarshal([]byte(yamlContent), c)
-	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
-	}
-
-	return c, err
-}
-
-func writePortalMetaData(branch string, sha string, version string) {
-	f, err := os.Create("portal-meta.yml")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	c := config{}
-	c.Meta.WorkingBranch = branch
-	c.Meta.Sha = sha
-	c.Meta.Version = version
-
-	d, err := yaml.Marshal(&c)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-
-	_, err = f.WriteString(string(d))
-	if err != nil {
-		fmt.Println(err)
-		_ = f.Close()
-		return
-	}
-
-}
-
-func savePatch(remoteTrackingBranch string, dateTime string) {
-	patch, _ := git.BuildPatch(remoteTrackingBranch)
-	f, _ := os.Create(buildPatchFileName(dateTime))
-	_, _ = f.WriteString(patch)
-	_ = f.Close()
-}
-
-func buildPatchFileName(dateTime string) string {
-	return fmt.Sprintf("portal-%s.patch", dateTime)
-}
-
-func branchNameStrategy(strategy string) ([]string, error) {
-	strategies := map[string]interface{}{
-		"git-duet":     git.GitDuet,
-		"git-together": git.GitTogether,
-	}
-
-	if strategy != "auto" {
-		fn, ok := strategies[strategy]
-		if !ok {
-			return nil, errors.New("unknown strategy")
-		} else {
-			return fn.(func() []string)(), nil
-		}
-	}
-
-	pairs := [][]string{
-		git.GitDuet(),
-		git.GitTogether(),
-	}
-
-	if slices.All(pairs, slices.Empty) {
-		return nil, errors.New("no branch naming strategy found")
-	}
-
-	if slices.Many(pairs, slices.NonEmpty) {
-		return nil, errors.New("multiple branch naming strategies found")
-	}
-
-	return slices.FindFirst(pairs, slices.NonEmpty), nil
 }
 
 func runner(commands []string, verbose bool, completionMessage string) {
@@ -277,21 +186,4 @@ func validate(valid bool, message string) {
 		fmt.Println(message)
 		os.Exit(1)
 	}
-}
-
-func getPortalBranch(authors []string) string {
-	sort.Strings(authors)
-	authors = slices.Map(authors, func(s string) string {
-		return strings.TrimSuffix(s, "\n")
-	})
-	branch := strings.Join(authors, "-")
-	return portal(branch)
-}
-
-func portal(branchName string) string {
-	return "portal-" + branchName
-}
-
-func removeFile(filename string) (string, error) {
-	return shell.Execute(fmt.Sprintf("rm %s", filename))
 }
