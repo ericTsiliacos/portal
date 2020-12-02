@@ -15,4 +15,5 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: darwin
         goarch: amd64
+        project_path: "./cmd/portal"
         ldflags: -X "main.version=${{ github.event.release.tag_name }}"
