@@ -60,7 +60,7 @@ load './test_helpers/portal.bash'
 
 }
 
-@test "push/pull: when puller is ahead of pusher against origin" {
+@test "push/pull: when puller is ahead of pusher against remote" {
   add_git_duet "clone1" "clone2"
   git_duet "clone1"
   git_duet "clone2"
@@ -80,7 +80,7 @@ load './test_helpers/portal.bash'
   portal_pull "clone2"
 }
 
-@test "push/pull: when pusher is ahead of puller against origin" {
+@test "push/pull: when pusher is ahead of puller against remote" {
   add_git_duet "clone1" "clone2"
   git_duet "clone1"
   git_duet "clone2"
@@ -259,6 +259,12 @@ pull_validation() {
     git_duet "clone1"
     git_duet "clone2"
 
+    pushd clone1 
+    touch bar.text
+    run test_portal push
+    assert_success
+    popd
+
     cd clone2
     git checkout -b untracked_branch
     run test_portal pull
@@ -267,11 +273,20 @@ pull_validation() {
   }
 
   @test "pull: validate no present commits" {
-    cd clone1
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    pushd clone1 
+    touch bar.text
+    run test_portal push
+    assert_success
+    popd
+
+    cd clone2
     touch foo.text
     git add .
-    git commit -m "Un-pushed work"
-
+    git commit -m "unfinished work"
     run test_portal pull
 
     assert_failure
@@ -279,9 +294,18 @@ pull_validation() {
   }
 
   @test "pull: validate clean index" {
-    cd clone1
-    touch foo.text
+   add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
 
+    pushd clone1 
+    touch bar.text
+    run test_portal push
+    assert_success
+    popd
+
+    cd clone2
+    touch foo.text
     run test_portal pull
 
     assert_failure

@@ -96,12 +96,6 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
-
-			startingBranch := git.GetCurrentBranch()
-
-			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
-
 			branchStrategy, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
@@ -122,7 +116,10 @@ func main() {
 			pullerVersion := semver.Canonical(version)
 
 			validate(semver.Major(pusherVersion) == semver.Major(pullerVersion), constants.DIFFERENT_VERSIONS)
+			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
+			startingBranch := git.GetCurrentBranch()
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
+			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
 			commands := []string{
 				fmt.Sprintf("git rebase origin/%s", workingBranch),
