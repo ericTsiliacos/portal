@@ -121,14 +121,7 @@ func main() {
 			sha := config.Meta.Sha
 			pullerVersion := semver.Canonical(version)
 
-			if semver.Major(pusherVersion) != semver.Major(pullerVersion) {
-				fmt.Println("Pusher and Puller are using different versions of portal")
-				fmt.Println("  1. Pusher run portal pull to retrieve changes.")
-				fmt.Println("  2. Both pairs update to latest version of portal.")
-				fmt.Println("\nThen try again...")
-				os.Exit(1)
-			}
-
+			validate(semver.Major(pusherVersion) == semver.Major(pullerVersion), constants.DIFFERENT_VERSIONS)
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
 
 			commands := []string{
