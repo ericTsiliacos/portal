@@ -272,12 +272,6 @@ func run(commands []string, verbose bool) {
 	}
 }
 
-func runDry(commands []string) {
-	for _, command := range commands {
-		fmt.Println(command)
-	}
-}
-
 func validate(valid bool, message string) {
 	if valid == false {
 		fmt.Println(message)
