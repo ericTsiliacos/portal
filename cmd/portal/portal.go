@@ -78,7 +78,9 @@ func main() {
 				fmt.Sprintf("git branch -D %s", portalBranch),
 			}
 
-			runner(commands, verbose, "✨ Sent!")
+			runner(commands, verbose)
+
+			fmt.Println("✨ Sent!")
 		})
 
 	commando.
@@ -137,13 +139,15 @@ func main() {
 				fmt.Sprintf("git push origin --delete %s --progress", portalBranch),
 			}
 
-			runner(commands, verbose, "✨ Got it!")
+			runner(commands, verbose)
+
+			fmt.Println("✨ Got it!")
 		})
 
 	commando.Parse(nil)
 }
 
-func runner(commands []string, verbose bool, completionMessage string) {
+func runner(commands []string, verbose bool) {
 	if verbose == true {
 		run(commands, verbose)
 	} else {
@@ -151,20 +155,6 @@ func runner(commands []string, verbose bool, completionMessage string) {
 			run(commands, verbose)
 		})
 	}
-
-	fmt.Println(completionMessage)
-}
-
-type terminal func()
-
-func style(fn terminal) {
-	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
-	s.Suffix = " Coming your way..."
-	s.Start()
-
-	fn()
-
-	s.Stop()
 }
 
 func run(commands []string, verbose bool) {
@@ -179,6 +169,16 @@ func run(commands []string, verbose bool) {
 			fmt.Println(output)
 		}
 	}
+}
+
+func style(fn func()) {
+	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
+	s.Suffix = " Coming your way..."
+	s.Start()
+
+	fn()
+
+	s.Stop()
 }
 
 func validate(valid bool, message string) {
