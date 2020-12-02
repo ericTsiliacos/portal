@@ -1,8 +1,8 @@
-package main
+package char
 
 import "unicode/utf8"
 
-func trimFirstRune(s string) string {
+func TrimFirstRune(s string) string {
 	_, i := utf8.DecodeRuneInString(s)
 	return s[i:]
 }

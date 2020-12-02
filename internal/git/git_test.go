@@ -1,8 +1,9 @@
-package main
+package git
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRefBoundary(t *testing.T) {

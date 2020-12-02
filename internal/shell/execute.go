@@ -1,13 +1,15 @@
-package main
+package shell
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/ericTsiliacos/portal/logger"
+	"github.com/ericTsiliacos/portal/internal/logger"
 )
 
-func execute(command string) (string, error) {
+func Execute(command string) (string, error) {
 	logger.LogInfo.Println(command)
 
 	s := strings.Split(command, " ")
@@ -22,4 +24,14 @@ func execute(command string) (string, error) {
 	}
 
 	return output, err
+}
+
+func Check(output string, err error) string {
+	if err != nil {
+		fmt.Println("LogFile: " + logger.LogPath)
+		_, _ = fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	return output
 }
