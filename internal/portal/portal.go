@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
-	"strings"
 
 	"github.com/ericTsiliacos/portal/internal/git"
-	"github.com/ericTsiliacos/portal/internal/slices"
+	"github.com/ericTsiliacos/portal/internal/portal/strategies"
 	"gopkg.in/yaml.v2"
 )
 
@@ -19,15 +17,6 @@ type Meta struct {
 		WorkingBranch string `yaml:"workingBranch"`
 		Sha           string `yaml:"sha"`
 	} `yaml:"Meta"`
-}
-
-func GetPortalBranch(authors []string) string {
-	sort.Strings(authors)
-	authors = slices.Map(authors, func(s string) string {
-		return strings.TrimSuffix(s, "\n")
-	})
-	branch := strings.Join(authors, "-")
-	return portal(branch)
 }
 
 func GetConfiguration(yamlContent string) (*Meta, error) {
@@ -73,39 +62,38 @@ func SavePatch(remoteTrackingBranch string, dateTime string) {
 	_ = f.Close()
 }
 
-func BranchNameStrategy(strategy string) ([]string, error) {
-	strategies := map[string]interface{}{
-		"git-duet":     git.GitDuet,
-		"git-together": git.GitTogether,
+func BranchNameStrategy(strategyName string) (string, error) {
+	strategies := []strategies.Strategy{
+		strategies.GitDuet{},
+		strategies.GitTogether{},
 	}
 
-	if strategy != "auto" {
-		fn, ok := strategies[strategy]
-		if !ok {
-			return nil, errors.New("unknown strategy")
-		} else {
-			return fn.(func() []string)(), nil
+	if strategyName != "auto" {
+		for _, strategy := range strategies {
+			if strategy.Name() == strategyName {
+				return strategy.Strategy(), nil
+			}
+		}
+
+		return "", errors.New("unknown strategy")
+	}
+
+	branchNames := []string{}
+	for i := 0; i < len(strategies); i++ {
+		if strategies[i].Strategy() != "" {
+			branchNames = append(branchNames, strategies[i].Strategy())
 		}
 	}
 
-	pairs := [][]string{
-		git.GitDuet(),
-		git.GitTogether(),
+	if len(branchNames) == 0 {
+		return "", errors.New("no branch naming strategy found")
 	}
 
-	if slices.All(pairs, slices.Empty) {
-		return nil, errors.New("no branch naming strategy found")
+	if len(branchNames) > 1 {
+		return "", errors.New("multiple branch naming strategies found")
 	}
 
-	if slices.Many(pairs, slices.NonEmpty) {
-		return nil, errors.New("multiple branch naming strategies found")
-	}
-
-	return slices.FindFirst(pairs, slices.NonEmpty), nil
-}
-
-func portal(branchName string) string {
-	return "portal-" + branchName
+	return branchNames[0], nil
 }
 
 func buildPatchFileName(dateTime string) string {
