@@ -86,7 +86,7 @@ func GetBoundarySha(remoteTrackingBranch string, currentBranch string) string {
 	}
 }
 
-func AddAll(files string) (string, error) {
+func Add(files string) (string, error) {
 	return shell.Execute(fmt.Sprintf("git add %s", files))
 }
 

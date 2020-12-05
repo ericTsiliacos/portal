@@ -39,32 +39,29 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
-			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
-
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
+			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
+			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
 			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
 
 			currentBranch := git.GetCurrentBranch()
-
 			remoteTrackingBranch := git.GetRemoteTrackingBranch()
-
 			sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
 
-			_, _ = git.AddAll(".")
+			_, _ = git.Add(".")
 			_, _ = git.Commit("portal-wip")
 
 			now := time.Now().Format(time.RFC3339)
 			portal.SavePatch(remoteTrackingBranch, now)
 
 			portal.WritePortalMetaData(currentBranch, sha, version)
-			_, _ = git.AddAll("portal-meta.yml")
+			_, _ = git.Add("portal-meta.yml")
 			_, _ = git.Commit("portal-meta")
 
 			commands := []string{
@@ -134,7 +131,7 @@ func main() {
 }
 
 func runner(commands []string, verbose bool) {
-	if verbose == true {
+	if verbose {
 		run(commands, verbose)
 	} else {
 		style(func() {
@@ -145,13 +142,13 @@ func runner(commands []string, verbose bool) {
 
 func run(commands []string, verbose bool) {
 	for _, command := range commands {
-		if verbose == true {
+		if verbose {
 			fmt.Println(command)
 		}
 
 		output := shell.Check(shell.Execute(command))
 
-		if verbose == true {
+		if verbose {
 			fmt.Println(output)
 		}
 	}
@@ -168,7 +165,7 @@ func style(fn func()) {
 }
 
 func validate(valid bool, message string) {
-	if valid == false {
+	if !valid {
 		fmt.Println(message)
 		os.Exit(1)
 	}

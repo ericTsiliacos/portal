@@ -175,6 +175,8 @@ load './test_helpers/portal.bash'
 
 push_validation() {
   @test "push: validate dirty workspace" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
     cd clone1
     run test_portal push
 
