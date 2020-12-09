@@ -16,6 +16,15 @@ Push local changes to a remote branch based on your pairing
 portal push
 ```
 
+Options
+
+```
+ -h, --help         displays usage information of the application or a command (default: false)
+ -p, --patch        create and stash patch (default: false)
+ -s, --strategy     git-duet, git-together (default: auto)
+ -v, --verbose      verbose output (default: false)
+```
+
 ### Patch option
 
 Creates and stashes a git patch of the changes to be pushed.
@@ -26,15 +35,6 @@ To apply the patch run: `git am <patch>`.
 
 ```bash
 portal push --patch
-```
-
-Options
-
-```
- -h, --help         displays usage information of the application or a command (default: false)
- -p, --patch        create and stash patch (default: false)
- -s, --strategy     git-duet, git-together (default: auto)
- -v, --verbose      verbose output (default: false)
 ```
 
 ## Pull
