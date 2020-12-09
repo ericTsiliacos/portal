@@ -18,7 +18,7 @@ portal push
 
 ### Patch option
 
-Create and stashes a git patch of the changes to be pushed.
+Creates and stashes a git patch of the changes to be pushed.
 
 The patch can be found at the head of `git stash list`. 
 
