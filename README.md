@@ -1,7 +1,5 @@
 # 🌀 Portal
 
-![](push.gif)
-
 ## Usage
 Assumsing both pairs have done `git duet <person1> <person2>` or `git-together with <person1> <person2>`
 
