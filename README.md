@@ -30,7 +30,7 @@ Options
 
 ### Patch option
 
-Creates and stashes a git patch of the changes to be pushed.
+Creates and stashes a git patch of the pushed changes.
 
 The patch can be found at the head of `git stash list`. 
 
