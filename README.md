@@ -4,6 +4,10 @@
 
 > You can use the `--help` option to get more details about the commands and their options
 
+## Getting Started
+
+Set up the same pairing using [git-duet](https://github.com/git-duet/git-duet) or [git-together](https://github.com/kejadlen/git-together)
+
 ## Push
 
 Pushes local changes to a remote branch based on your pairing
