@@ -15,10 +15,10 @@ portal push
 Options
 
 ```
- -h, --help                    displays usage information of the application or a command (default: false)
- -p, --patch                   create and stash patch (default: false)
- -s, --strategy                git-duet, git-together (default: auto)
- -v, --verbose                 verbose output (default: false)
+ -h, --help         displays usage information of the application or a command (default: false)
+ -p, --patch        create and stash patch (default: false)
+ -s, --strategy     git-duet, git-together (default: auto)
+ -v, --verbose      verbose output (default: false)
 ```
 
 ## Pull
@@ -32,9 +32,9 @@ portal pull
 Options
 
 ```
- -h, --help                    displays usage information of the application or a command (default: false)
- -s, --strategy                git-duet, git-together (default: auto)
- -v, --verbose                 verbose output (default: false)
+ -h, --help         displays usage information of the application or a command (default: false)
+ -s, --strategy     git-duet, git-together (default: auto)
+ -v, --verbose      verbose output (default: false)
 ```
   
 ### Supports
