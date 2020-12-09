@@ -71,7 +71,12 @@ func BranchNameStrategy(strategyName string) (string, error) {
 	if strategyName != "auto" {
 		for _, strategy := range strategies {
 			if strategy.Name() == strategyName {
-				return strategy.Strategy(), nil
+				branchName := strategy.Strategy()
+				if branchName != "" {
+					return branchName, nil
+				} else {
+					return "", fmt.Errorf("%s not configured", strategy.Name())
+				}
 			}
 		}
 

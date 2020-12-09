@@ -28,7 +28,7 @@ func Execute(command string) (string, error) {
 
 func Check(output string, err error) string {
 	if err != nil {
-		fmt.Println("LogFile: " + logger.LogPath)
+		fmt.Println()
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

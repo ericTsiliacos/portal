@@ -157,7 +157,31 @@ load './test_helpers/portal.bash'
   assert_success
 }
 
-@test "push/pull: validate branch naming strategy option" {
+@test "strategy option: not configured" {
+  add_git_duet "clone1" "clone2"
+
+  pushd "clone1" || exit
+  touch foo.text
+  run test_portal push -s git-duet
+  assert_failure
+  assert_output "Error: git-duet not configured"
+  popd
+
+  git_duet "clone1"
+
+  pushd "clone1" || exit
+  run test_portal push -s git-duet
+  assert_success
+  popd
+
+  pushd "clone2" || exit
+  run test_portal pull -s git-duet
+  assert_failure
+  assert_output "Error: git-duet not configured"
+  popd
+}
+
+@test "strategy option: validate branch option" {
   add_git_duet "clone1" "clone2"
   add_git_together "clone1" "clone2"
 

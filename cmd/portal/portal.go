@@ -24,14 +24,13 @@ func main() {
 	commando.
 		SetExecutableName("portal").
 		SetVersion(version).
-		SetDescription("A commandline tool for moving work-in-progress to and from your pair using git")
+		SetDescription("A commandline tool for moving work between pairs using git")
 
 	commando.
 		Register("push").
-		SetShortDescription("push work-in-progress to pair").
-		SetDescription("This command pushes work-in-progress to a branch for your pair to pull.").
-		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
-		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
+		SetDescription("Push changes to a portal branch").
+		AddFlag("verbose,v", "verbose output", commando.Bool, false).
+		AddFlag("strategy,s", "git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
@@ -80,10 +79,9 @@ func main() {
 
 	commando.
 		Register("pull").
-		SetShortDescription("pull work-in-progress from pair").
-		SetDescription("This command pulls work-in-progress from your pair.").
-		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
-		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
+		SetDescription("Pull changes from portal branch").
+		AddFlag("verbose,v", "verbose output", commando.Bool, false).
+		AddFlag("strategy,s", "git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))

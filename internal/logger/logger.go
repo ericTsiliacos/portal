@@ -8,23 +8,23 @@ import (
 )
 
 var (
-	LogInfo  *log.Logger
-	LogError *log.Logger
-	LogPath  string
-	logFile  *os.File
+	LogInfo     *log.Logger
+	LogError    *log.Logger
+	LogFilePath string
+	logFile     *os.File
 )
 
 func init() {
 	usr, _ := user.Current()
 	home := usr.HomeDir
-	LogPath = filepath.Join(home, "/.portal/Logs")
-	err := os.MkdirAll(LogPath, 0770)
+	logPath := filepath.Join(home, "/.portal/Logs")
+	err := os.MkdirAll(logPath, 0770)
 	if err != nil {
 		panic(err)
 	}
 
-	logFilePath := filepath.Join(LogPath, "/info.log")
-	logFile, err = os.Create(logFilePath)
+	LogFilePath = filepath.Join(logPath, "/info.log")
+	logFile, err = os.Create(LogFilePath)
 	if err != nil {
 		panic(err)
 	}
