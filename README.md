@@ -42,7 +42,7 @@ portal push --patch
 
 ## Pull
 
-Pull changes at the pair branch name and clean up the temporary branch
+Pull changes from the portal branch name and clean up the temporary branch
 
 ```bash
 portal pull
