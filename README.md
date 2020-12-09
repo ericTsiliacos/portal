@@ -13,7 +13,7 @@ Set up the same pairing using [git-duet](https://github.com/git-duet/git-duet) o
 
 ## Push
 
-Push local changes to a remote branch based on your pairing
+> Push local changes to a remote branch based on your pairing
 
 ```bash
 portal push
@@ -42,7 +42,7 @@ portal push --patch
 
 ## Pull
 
-Pull changes from the portal branch name and clean up the temporary branch
+> Pull changes from the portal branch name and clean up the temporary branch
 
 ```bash
 portal pull
