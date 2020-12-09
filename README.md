@@ -1,5 +1,8 @@
 # 🌀 Portal
 
+### Installation
+```brew install erictsiliacos/tap/portal```
+
 # Usage
 
 > You can use the `--help` option to get more details about the commands and their options
@@ -56,10 +59,6 @@ Options
 ### Supports
 - [git-duet](https://github.com/git-duet/git-duet)
 - [git-together](https://github.com/kejadlen/git-together)
-
-  
-### Installation
-```brew install erictsiliacos/tap/portal```
 
 ## Contribute
 
