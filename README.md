@@ -16,6 +16,16 @@ Push local changes to a remote branch based on your pairing
 portal push
 ```
 
+Create and stashes a git patch of the changes to be pushed.
+
+The patch can be found at the head of `git stash list`. 
+
+To apply the patch run: `git am <patch>`.
+
+```bash
+portal push --patch
+```
+
 Options
 
 ```
