@@ -55,7 +55,7 @@ func WritePortalMetaData(branch string, sha string, version string) {
 
 }
 
-func SavePatch(remoteTrackingBranch string, dateTime string) {
+func Patch(remoteTrackingBranch string, dateTime string) {
 	patch, _ := git.BuildPatch(remoteTrackingBranch)
 	f, _ := os.Create(buildPatchFileName(dateTime))
 	_, _ = f.WriteString(patch)

@@ -31,12 +31,14 @@ func main() {
 		SetDescription("Push changes to a portal branch").
 		AddFlag("verbose,v", "verbose output", commando.Bool, false).
 		AddFlag("strategy,s", "git-duet, git-together", commando.String, "auto").
+		AddFlag("patch,p", "create and stash patch", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
+			patch, _ := flags["patch"].GetBool()
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
@@ -56,15 +58,13 @@ func main() {
 			_, _ = git.Add(".")
 			_, _ = git.Commit("portal-wip")
 
-			now := time.Now().Format(time.RFC3339)
-			portal.SavePatch(remoteTrackingBranch, now)
-
-			portal.WritePortalMetaData(currentBranch, sha, version)
-			_, _ = git.Add("portal-meta.yml")
-			_, _ = git.Commit("portal-meta")
+			savePatch(patch, remoteTrackingBranch, func() {
+				portal.WritePortalMetaData(currentBranch, sha, version)
+				_, _ = git.Add("portal-meta.yml")
+				_, _ = git.Commit("portal-meta")
+			})
 
 			commands := []string{
-				fmt.Sprintf("git stash save \"portal-patch-%s\" --include-untracked", now),
 				fmt.Sprintf("git checkout -b %s --progress", portalBranch),
 				fmt.Sprintf("git push origin %s --progress", portalBranch),
 				fmt.Sprintf("git checkout %s --progress", currentBranch),
@@ -160,6 +160,19 @@ func style(fn func()) {
 	fn()
 
 	s.Stop()
+}
+
+func savePatch(save bool, remoteTrackingBranch string, fn func()) {
+	if save {
+		now := time.Now().Format(time.RFC3339)
+		portal.Patch(remoteTrackingBranch, now)
+
+		fn()
+
+		shell.Execute(fmt.Sprintf("git stash save \"portal-patch-%s\" --include-untracked", now))
+	} else {
+		fn()
+	}
 }
 
 func validate(valid bool, message string) {
