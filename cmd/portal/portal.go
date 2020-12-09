@@ -10,6 +10,7 @@ import (
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/logger"
 	"github.com/ericTsiliacos/portal/internal/portal"
+	"github.com/ericTsiliacos/portal/internal/portal/strategies"
 	"github.com/ericTsiliacos/portal/internal/shell"
 	"github.com/thatisuday/commando"
 	"golang.org/x/mod/semver"
@@ -31,7 +32,7 @@ func main() {
 		SetShortDescription("push work-in-progress to pair").
 		SetDescription("This command pushes work-in-progress to a branch for your pair to pull.").
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
-		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
+		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together, generate", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
@@ -39,10 +40,27 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			portalBranch, err := portal.BranchNameStrategy(strategy)
-			if err != nil {
-				fmt.Printf("Error: %v\n", err)
-				os.Exit(1)
+			var portalBranch string
+			if strategy != "auto" {
+				chosenBranchFound, err := portal.ChosenBranchName(strategy)
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					os.Exit(1)
+				}
+				portalBranch = chosenBranchFound
+			} else {
+				autoBranchFound, err := portal.AutoBranchName()
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					os.Exit(1)
+				}
+				portalBranch = autoBranchFound
+			}
+
+			var generatedBranchName string
+			if portalBranch == "" {
+				generatedBranchName = strategies.Generate{}.Strategy()
+				portalBranch = portal.PrefixPortal(generatedBranchName)
 			}
 
 			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
@@ -75,26 +93,49 @@ func main() {
 
 			runner(commands, verbose)
 
-			fmt.Println("✨ Sent!")
+			if generatedBranchName != "" {
+				fmt.Printf("✨ Sent to %s\n", generatedBranchName)
+			} else {
+				fmt.Println("✨ Sent!")
+			}
 		})
 
 	commando.
 		Register("pull").
 		SetShortDescription("pull work-in-progress from pair").
 		SetDescription("This command pulls work-in-progress from your pair.").
+		AddArgument("portal-name", "optional portal name", " ").
 		AddFlag("verbose,v", "displays commands and outputs", commando.Bool, false).
 		AddFlag("strategy,s", "strategy to use for branch name: git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
 
+			generatedBranchName := args["portal-name"].Value
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			portalBranch, err := portal.BranchNameStrategy(strategy)
-			if err != nil {
-				fmt.Printf("Error: %v\n", err)
-				os.Exit(1)
+			var portalBranch string
+			if generatedBranchName != " " {
+				portalBranch = portal.PrefixPortal(generatedBranchName)
+			} else if strategy != "auto" {
+				chosenBranchFound, err := portal.ChosenBranchName(strategy)
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					os.Exit(1)
+				}
+				portalBranch = chosenBranchFound
+			} else {
+				autoBranchFound, err := portal.AutoBranchName()
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					os.Exit(1)
+				}
+				if autoBranchFound == "" {
+					fmt.Printf("Error: no branch naming strategy found\n")
+					os.Exit(1)
+				}
+				portalBranch = autoBranchFound
 			}
 
 			validate(git.RemoteBranchExists(portalBranch), constants.PORTAL_CLOSED)

@@ -19,12 +19,8 @@ func getAuthorsBranch(authors []string) string {
 			return strings.TrimSuffix(s, "\n")
 		})
 		branch := strings.Join(authors, "-")
-		return prefixPortal(branch)
+		return branch
 	} else {
 		return ""
 	}
-}
-
-func prefixPortal(branchName string) string {
-	return "portal-" + branchName
 }

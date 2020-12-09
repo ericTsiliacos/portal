@@ -62,20 +62,31 @@ func SavePatch(remoteTrackingBranch string, dateTime string) {
 	_ = f.Close()
 }
 
-func BranchNameStrategy(strategyName string) (string, error) {
+func ChosenBranchName(strategyName string) (string, error) {
 	strategies := []strategies.Strategy{
 		strategies.GitDuet{},
 		strategies.GitTogether{},
+		strategies.Generate{},
 	}
 
-	if strategyName != "auto" {
-		for _, strategy := range strategies {
-			if strategy.Name() == strategyName {
-				return strategy.Strategy(), nil
+	for _, strategy := range strategies {
+		if strategy.Name() == strategyName {
+			branchName := strategy.Strategy()
+			if branchName != "" {
+				return PrefixPortal(branchName), nil
+			} else {
+				return "", fmt.Errorf("%s not configured", strategy.Name())
 			}
 		}
+	}
 
-		return "", errors.New("unknown strategy")
+	return "", errors.New("unknown strategy")
+}
+
+func AutoBranchName() (string, error) {
+	strategies := []strategies.Strategy{
+		strategies.GitDuet{},
+		strategies.GitTogether{},
 	}
 
 	branchNames := []string{}
@@ -86,14 +97,18 @@ func BranchNameStrategy(strategyName string) (string, error) {
 	}
 
 	if len(branchNames) == 0 {
-		return "", errors.New("no branch naming strategy found")
+		return "", nil
 	}
 
 	if len(branchNames) > 1 {
 		return "", errors.New("multiple branch naming strategies found")
 	}
 
-	return branchNames[0], nil
+	return PrefixPortal(branchNames[0]), nil
+}
+
+func PrefixPortal(branchName string) string {
+	return "portal-" + branchName
 }
 
 func buildPatchFileName(dateTime string) string {
