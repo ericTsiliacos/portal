@@ -1,9 +1,6 @@
 # 🌀 Portal
 
-### Installation
-```brew install erictsiliacos/tap/portal```
-
-### Usage
+## Usage
 Assumsing both pairs have done `git duet <person1> <person2>` or `git-together with <person1> <person2>`
 
 - `portal push`: pushes local changes to a remote branch based on your pairing (ex. portal-pa-ir)
@@ -15,6 +12,11 @@ Assumsing both pairs have done `git duet <person1> <person2>` or `git-together w
 - Using either [git-duet](https://github.com/git-duet/git-duet) or [git-together](https://github.com/kejadlen/git-together)
 - Both you and your pair have write access to the working repository
   
+### Installation
+```brew install erictsiliacos/tap/portal```
+
+## Contribute
+
 ### Bats
 Bats is a bash testing framework, used here for integration tests. This can be installed with homebrew.
 
