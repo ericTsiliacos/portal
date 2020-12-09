@@ -102,14 +102,6 @@ func ShowFile(branch string, fileName string) (string, error) {
 	return shell.Execute(fmt.Sprintf("git show origin/%s:%s", branch, fileName))
 }
 
-func Rebase() (string, error) {
-	return shell.Execute("git pull -r")
-}
-
-func CheckoutFile(branch string, filename string) (string, error) {
-	return shell.Execute(fmt.Sprintf("git checkout origin/%s -- %s", branch, filename))
-}
-
 func parseRefBoundary(revisionBoundaries string) string {
 	boundaries := strings.FieldsFunc(revisionBoundaries, func(c rune) bool {
 		return c == '\n'
