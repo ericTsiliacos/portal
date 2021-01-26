@@ -20,6 +20,12 @@ func DirtyIndex() bool {
 	return indexCount > 0
 }
 
+func CurrentWorkingDirectoryGitRoot() bool {
+	gitRoot := strings.TrimSuffix(shell.Check(shell.Execute("git rev-parse --git-dir")), "\n")
+
+	return gitRoot == ".git"
+}
+
 func UnpublishedWork() bool {
 	output := shell.Check(shell.Execute("git status -sb"))
 

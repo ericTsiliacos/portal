@@ -10,6 +10,7 @@ Pusher and Puller are using different versions of portal
  1. Pusher run portal pull to retrieve changes.
  2. Both pairs update to latest version of portal.
 Then try again...`
+const GIT_ROOT = "current working directory must be root of git project"
 
 func LOCAL_BRANCH_EXISTS(branch string) string {
 	return fmt.Sprintf("local branch %s already exists", branch)

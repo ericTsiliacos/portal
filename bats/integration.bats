@@ -198,6 +198,21 @@ load './test_helpers/portal.bash'
 }
 
 push_validation() {
+  @test "push: validate current working directory is root of git project" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    pushd clone1
+    mkdir tmp
+    cd tmp 
+    touch bar.text
+    run test_portal push
+
+    assert_failure
+    assert_output "current working directory must be root of git project"
+  }
+
   @test "push: validate dirty workspace" {
     add_git_duet "clone1" "clone2"
     git_duet "clone1"
@@ -280,6 +295,32 @@ push_validation() {
 }
 
 pull_validation() {
+   @test "pull: validate current working directory is root of git project" {
+    add_git_duet "clone1" "clone2"
+    git_duet "clone1"
+    git_duet "clone2"
+
+    pushd clone1
+    mkdir tmp
+    cd tmp && touch bar.text && cd ..
+    git add .
+    git commit -m "directory added"
+    git push origin head
+
+    touch foo.text
+    run test_portal push
+    assert_success
+    popd
+
+    pushd clone2
+    git pull --rebase
+    cd tmp
+    run test_portal pull
+
+    assert_failure
+    assert_output "current working directory must be root of git project"
+  }
+
   @test "pull: validate current branch is remotely tracked" {
     add_git_duet "clone1" "clone2"
     git_duet "clone1"

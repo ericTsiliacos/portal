@@ -46,6 +46,7 @@ func main() {
 				os.Exit(1)
 			}
 
+			validate(git.CurrentWorkingDirectoryGitRoot(), constants.GIT_ROOT)
 			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
 			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
@@ -95,6 +96,7 @@ func main() {
 				os.Exit(1)
 			}
 
+			validate(git.CurrentWorkingDirectoryGitRoot(), constants.GIT_ROOT)
 			validate(git.RemoteBranchExists(portalBranch), constants.PORTAL_CLOSED)
 
 			_, _ = git.Fetch()
