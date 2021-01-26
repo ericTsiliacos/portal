@@ -26,6 +26,10 @@ func CurrentWorkingDirectoryGitRoot() bool {
 	return gitRoot == ".git"
 }
 
+func Version() string {
+	return shell.Check(shell.Execute("git version"))
+}
+
 func UnpublishedWork() bool {
 	output := shell.Check(shell.Execute("git status -sb"))
 

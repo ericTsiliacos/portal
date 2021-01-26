@@ -35,6 +35,7 @@ func main() {
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
+			logger.LogInfo.Println(git.Version())
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
@@ -86,6 +87,7 @@ func main() {
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
+			logger.LogInfo.Println(git.Version())
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
