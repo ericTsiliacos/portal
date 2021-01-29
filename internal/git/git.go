@@ -97,7 +97,16 @@ func GetBoundarySha(remoteTrackingBranch string, currentBranch string) string {
 }
 
 func Add(files string) (string, error) {
-	return shell.Execute(fmt.Sprintf("git add %s", files))
+	_, err := shell.Execute(fmt.Sprintf("git add %s", files))
+	return files, err
+}
+
+func Reset() (string, error) {
+	return shell.Execute("git reset")
+}
+
+func UndoCommit() (string, error) {
+	return shell.Execute("git reset HEAD^")
 }
 
 func Commit(message string) (string, error) {

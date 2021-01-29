@@ -10,6 +10,7 @@ import (
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/logger"
 	"github.com/ericTsiliacos/portal/internal/portal"
+	"github.com/ericTsiliacos/portal/internal/saga"
 	"github.com/ericTsiliacos/portal/internal/shell"
 	"github.com/thatisuday/commando"
 	"golang.org/x/mod/semver"
@@ -37,9 +38,9 @@ func main() {
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
 			logger.LogInfo.Println(git.Version())
 
-			verbose, _ := flags["verbose"].GetBool()
+			// verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
-			patch, _ := flags["patch"].GetBool()
+			// patch, _ := flags["patch"].GetBool()
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
@@ -53,30 +54,129 @@ func main() {
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
 			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
 
-			currentBranch := git.GetCurrentBranch()
+			originalBranch := git.GetCurrentBranch()
 			remoteTrackingBranch := git.GetRemoteTrackingBranch()
-			sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+			sha := git.GetBoundarySha(remoteTrackingBranch, originalBranch)
+			now := time.Now().Format(time.RFC3339)
 
-			_, _ = git.Add(".")
-			_, _ = git.Commit("portal-wip")
-
-			savePatch(patch, remoteTrackingBranch, func() {
-				portal.WritePortalMetaData(currentBranch, sha, version)
-				_, _ = git.Add("portal-meta.yml")
-				_, _ = git.Commit("portal-meta")
-			})
-
-			commands := []string{
-				fmt.Sprintf("git checkout -b %s --progress", portalBranch),
-				fmt.Sprintf("git push origin %s --progress", portalBranch),
-				fmt.Sprintf("git checkout %s --progress", currentBranch),
-				fmt.Sprintf("git reset --hard %s", remoteTrackingBranch),
-				fmt.Sprintf("git branch -D %s", portalBranch),
+			steps := []saga.Step{
+				{
+					Name:       "git add .",
+					Run:        func() (string, error) { return git.Add(".") },
+					Compensate: func(input string) (string, error) { return git.Reset() },
+				},
+				{
+					Name:       "git commit -m 'portal-wip'",
+					Run:        func() (string, error) { return git.Commit("portal-wip") },
+					Compensate: func(input string) (string, error) { return git.UndoCommit() },
+				},
+				{
+					Name: "back up work in progress",
+					Run: func() (string, error) {
+						return portal.Patch(remoteTrackingBranch, now)
+					},
+					Compensate: func(fileName string) (string, error) {
+						return shell.Execute(fmt.Sprintf("rm %s", fileName))
+					},
+				},
+				{
+					Name: "create portal metadata file",
+					Run: func() (string, error) {
+						return portal.WritePortalMetadata("portal-meta.yml", originalBranch, sha, version)
+					},
+					Compensate: func(fileName string) (string, error) {
+						return shell.Execute(fmt.Sprintf("rm %s", fileName))
+					},
+				},
+				{
+					Name:       "git add portal-meta.yml",
+					Run:        func() (string, error) { return git.Add("portal-meta.yml") },
+					Compensate: func(input string) (string, error) { return git.Reset() },
+				},
+				{
+					Name:       "git commit -m 'portal-meta'",
+					Run:        func() (string, error) { return git.Commit("portal-meta") },
+					Compensate: func(input string) (string, error) { return git.UndoCommit() },
+				},
+				{
+					Name: "git stash save backup patch",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git stash push -m \"portal-patch-%s\" --include-untracked", now))
+					},
+					Compensate: func(input string) (string, error) {
+						return shell.Execute("git stash pop")
+					},
+				},
+				{
+					Name: "git checkout portal branch",
+					Run: func() (string, error) {
+						_, err := shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
+						return portalBranch, err
+					},
+					Compensate: func(portalBranch string) (string, error) {
+						shell.Execute(fmt.Sprintf("git checkout %s --progress", originalBranch))
+						return shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+					},
+				},
+				{
+					Name: "git push portal branch",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git push origin %s --progress", portalBranch))
+					},
+					Compensate: func(originalBranch string) (string, error) {
+						return shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+					},
+					Retries: 1,
+				},
+				{
+					Name: "git checkout to original branch",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git checkout %s --progress", originalBranch))
+					},
+				},
+				{
+					Name: "delete local portal branch",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+					},
+				},
+				{
+					Name: "clear git workspace",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git reset --hard %s", remoteTrackingBranch))
+					},
+				},
 			}
+			s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
+			s.Suffix = " Coming your way..."
+			s.Start()
 
-			runner(commands, verbose)
+			saga := saga.Saga{Steps: steps}
+			err = saga.Run()
 
-			fmt.Println("✨ Sent!")
+			s.Stop()
+
+			// savePatch(patch, remoteTrackingBranch, func() {
+			// 	portal.WritePortalMetadata("portal-meta.yml", originalBranch, sha, version)
+			// 	_, _ = git.Add("portal-meta.yml")
+			// 	_, _ = git.Commit("portal-meta")
+			// })
+
+			// commands := []string{
+			// 	fmt.Sprintf("git checkout -b %s --progress", portalBranch),
+			// 	fmt.Sprintf("git push origin %s --progress", portalBranch),
+			// 	fmt.Sprintf("git checkout %s --progress", originalBranch),
+			// 	fmt.Sprintf("git reset --hard %s", remoteTrackingBranch),
+			// 	fmt.Sprintf("git branch -D %s", portalBranch),
+			// }
+
+			// runner(commands, verbose)
+
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("✨ Sent!")
+			}
 		})
 
 	commando.
