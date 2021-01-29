@@ -1,5 +1,7 @@
 # 🌀 Portal
 
+https://erictsiliacos.medium.com/remote-pairing-with-portal-ba107fcb824f
+
 ### Installation
 ```brew install erictsiliacos/tap/portal```
 
