@@ -107,17 +107,64 @@ func main() {
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
 			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
-			commands := []string{
-				fmt.Sprintf("git rebase origin/%s", workingBranch),
-				fmt.Sprintf("git reset --hard %s", sha),
-				fmt.Sprintf("git rebase origin/%s~1", portalBranch),
-				"git reset HEAD^",
-				fmt.Sprintf("git push origin --delete %s --progress", portalBranch),
+			pullSteps := []saga.Step{
+				{
+					Name: "git rebase against remote working branch",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git rebase origin/%s", workingBranch))
+					},
+					Compensate: func(input string) (string, error) {
+						return "", nil
+					},
+				},
+				{
+					Name: "git reset to pusher sha",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git reset --hard %s", sha))
+					},
+					Compensate: func(input string) (string, error) {
+						return "", nil
+					},
+				},
+				{
+					Name: "git rebase portal work in progress",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git rebase origin/%s~1", portalBranch))
+					},
+					Compensate: func(input string) (string, error) {
+						return "", nil
+					},
+				},
+				{
+					Name: "git reset commits",
+					Run: func() (string, error) {
+						return shell.Execute("git reset HEAD^")
+					},
+					Compensate: func(input string) (string, error) {
+						return "", nil
+					},
+				},
+				{
+					Name: "delete remote portal branch",
+					Run: func() (string, error) {
+						return shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+					},
+					Compensate: func(input string) (string, error) {
+						return "", nil
+					},
+				},
 			}
 
-			runner(commands, verbose)
+			errors := stylized(verbose, func() []string {
+				saga := saga.Saga{Steps: pullSteps, Verbose: verbose}
+				return saga.Run()
+			})
 
-			fmt.Println("✨ Got it!")
+			if errors != nil {
+				fmt.Println(errors)
+			} else {
+				fmt.Println("✨ Got it!")
+			}
 		})
 
 	commando.Parse(nil)
