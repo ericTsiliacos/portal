@@ -11,7 +11,6 @@ import (
 	"github.com/ericTsiliacos/portal/internal/logger"
 	"github.com/ericTsiliacos/portal/internal/portal"
 	"github.com/ericTsiliacos/portal/internal/saga"
-	"github.com/ericTsiliacos/portal/internal/shell"
 	"github.com/thatisuday/commando"
 	"golang.org/x/mod/semver"
 )
@@ -107,53 +106,7 @@ func main() {
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
 			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
-			pullSteps := []saga.Step{
-				{
-					Name: "git rebase against remote working branch",
-					Run: func() (string, error) {
-						return shell.Execute(fmt.Sprintf("git rebase origin/%s", workingBranch))
-					},
-					Compensate: func(input string) (string, error) {
-						return "", nil
-					},
-				},
-				{
-					Name: "git reset to pusher sha",
-					Run: func() (string, error) {
-						return shell.Execute(fmt.Sprintf("git reset --hard %s", sha))
-					},
-					Compensate: func(input string) (string, error) {
-						return "", nil
-					},
-				},
-				{
-					Name: "git rebase portal work in progress",
-					Run: func() (string, error) {
-						return shell.Execute(fmt.Sprintf("git rebase origin/%s~1", portalBranch))
-					},
-					Compensate: func(input string) (string, error) {
-						return "", nil
-					},
-				},
-				{
-					Name: "git reset commits",
-					Run: func() (string, error) {
-						return shell.Execute("git reset HEAD^")
-					},
-					Compensate: func(input string) (string, error) {
-						return "", nil
-					},
-				},
-				{
-					Name: "delete remote portal branch",
-					Run: func() (string, error) {
-						return shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
-					},
-					Compensate: func(input string) (string, error) {
-						return "", nil
-					},
-				},
-			}
+			pullSteps := portal.PullSagaSteps(startingBranch, portalBranch, sha)
 
 			errors := stylized(verbose, func() []string {
 				saga := saga.Saga{Steps: pullSteps, Verbose: verbose}
@@ -170,16 +123,6 @@ func main() {
 	commando.Parse(nil)
 }
 
-func runner(commands []string, verbose bool) {
-	if verbose {
-		run(commands, verbose)
-	} else {
-		style(func() {
-			run(commands, verbose)
-		})
-	}
-}
-
 func stylized(verbose bool, fn func() []string) []string {
 	if verbose {
 		return fn()
@@ -194,30 +137,6 @@ func stylized(verbose bool, fn func() []string) []string {
 
 		return err
 	}
-}
-
-func run(commands []string, verbose bool) {
-	for _, command := range commands {
-		if verbose {
-			fmt.Println(command)
-		}
-
-		output := shell.Check(shell.Execute(command))
-
-		if verbose {
-			fmt.Println(output)
-		}
-	}
-}
-
-func style(fn func()) {
-	s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
-	s.Suffix = " Coming your way..."
-	s.Start()
-
-	fn()
-
-	s.Stop()
 }
 
 func validate(valid bool, message string) {
