@@ -10,6 +10,7 @@ import (
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/logger"
 	"github.com/ericTsiliacos/portal/internal/portal"
+	"github.com/ericTsiliacos/portal/internal/saga"
 	"github.com/ericTsiliacos/portal/internal/shell"
 	"github.com/thatisuday/commando"
 	"golang.org/x/mod/semver"
@@ -53,30 +54,20 @@ func main() {
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
 			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
 
-			currentBranch := git.GetCurrentBranch()
-			remoteTrackingBranch := git.GetRemoteTrackingBranch()
-			sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+			now := time.Now().Format(time.RFC3339)
 
-			_, _ = git.Add(".")
-			_, _ = git.Commit("portal-wip")
+			pushSteps := portal.PushSagaSteps(portalBranch, now, version, patch)
 
-			savePatch(patch, remoteTrackingBranch, func() {
-				portal.WritePortalMetaData(currentBranch, sha, version)
-				_, _ = git.Add("portal-meta.yml")
-				_, _ = git.Commit("portal-meta")
+			errors := stylized(verbose, func() []string {
+				saga := saga.Saga{Steps: pushSteps, Verbose: verbose}
+				return saga.Run()
 			})
 
-			commands := []string{
-				fmt.Sprintf("git checkout -b %s --progress", portalBranch),
-				fmt.Sprintf("git push origin %s --progress", portalBranch),
-				fmt.Sprintf("git checkout %s --progress", currentBranch),
-				fmt.Sprintf("git reset --hard %s", remoteTrackingBranch),
-				fmt.Sprintf("git branch -D %s", portalBranch),
+			if errors != nil {
+				fmt.Println(errors)
+			} else {
+				fmt.Println("✨ Sent!")
 			}
-
-			runner(commands, verbose)
-
-			fmt.Println("✨ Sent!")
 		})
 
 	commando.
@@ -142,6 +133,22 @@ func runner(commands []string, verbose bool) {
 	}
 }
 
+func stylized(verbose bool, fn func() []string) []string {
+	if verbose {
+		return fn()
+	} else {
+		s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
+		s.Suffix = " Coming your way..."
+		s.Start()
+
+		err := fn()
+
+		s.Stop()
+
+		return err
+	}
+}
+
 func run(commands []string, verbose bool) {
 	for _, command := range commands {
 		if verbose {
@@ -164,19 +171,6 @@ func style(fn func()) {
 	fn()
 
 	s.Stop()
-}
-
-func savePatch(save bool, remoteTrackingBranch string, fn func()) {
-	if save {
-		now := time.Now().Format(time.RFC3339)
-		portal.Patch(remoteTrackingBranch, now)
-
-		fn()
-
-		shell.Execute(fmt.Sprintf("git stash save \"portal-patch-%s\" --include-untracked", now))
-	} else {
-		fn()
-	}
 }
 
 func validate(valid bool, message string) {
