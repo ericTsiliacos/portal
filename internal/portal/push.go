@@ -2,108 +2,124 @@ package portal
 
 import (
 	"fmt"
+	"os/exec"
 
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
 	"github.com/ericTsiliacos/portal/internal/shell"
 )
 
-func PushSagaSteps(portalBranch string, now string, version string, patch bool) []saga.Step {
+func PushSagaSteps(portalBranch string, now string, version string) []saga.Step {
 	remoteTrackingBranch := git.GetRemoteTrackingBranch()
 	currentBranch := git.GetCurrentBranch()
 	sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
 
 	return []saga.Step{
 		{
-			Name:       "git add .",
-			Run:        func() (string, error) { return git.Add(".") },
-			Compensate: func(input string) (string, error) { return git.Reset() },
+			Name: "git add .",
+			Run: func() (err error) {
+				_, err = exec.Command("git", "add", ".").CombinedOutput()
+				return
+			},
+			Undo: func() (err error) { _, err = git.Reset(); return },
 		},
 		{
-			Name:       "git commit -m 'portal-wip'",
-			Run:        func() (string, error) { return git.Commit("portal-wip") },
-			Compensate: func(input string) (string, error) { return git.UndoCommit() },
+			Name: "git commit -m 'portal-wip'",
+			Run:  func() (err error) { _, err = git.Commit("portal-wip"); return },
+			Undo: func() (err error) { _, err = git.UndoCommit(); return },
 		},
 		{
 			Name: "create git patch of work in progress",
-			Run: func() (string, error) {
-				return Patch(remoteTrackingBranch, now)
+			Run: func() (err error) {
+				_, err = Patch(remoteTrackingBranch, now)
+				return
 			},
-			Compensate: func(fileName string) (string, error) {
-				return shell.Execute(fmt.Sprintf("rm %s", fileName))
+			Undo: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("rm %s", BuildPatchFileName(now)))
+				return
 			},
-			Exclude: !patch,
 		},
 		{
 			Name: "create portal-meta.yml",
-			Run: func() (string, error) {
-				return WritePortalMetadata("portal-meta.yml", currentBranch, sha, version)
+			Run: func() (err error) {
+				_, err = WritePortalMetadata("portal-meta.yml", currentBranch, sha, version)
+				return
 			},
-			Compensate: func(fileName string) (string, error) {
-				return shell.Execute(fmt.Sprintf("rm %s", fileName))
+			Undo: func() (err error) {
+				_, err = shell.Execute("rm portal-meta.yml")
+				return
 			},
 		},
 		{
-			Name:       "git add portal-meta.yml",
-			Run:        func() (string, error) { return git.Add("portal-meta.yml") },
-			Compensate: func(input string) (string, error) { return git.Reset() },
+			Name: "git add portal-meta.yml",
+			Run:  func() (err error) { _, err = git.Add("portal-meta.yml"); return },
+			Undo: func() (err error) { _, err = git.Reset(); return },
 		},
 		{
-			Name:       "git commit -m 'portal-meta'",
-			Run:        func() (string, error) { return git.Commit("portal-meta") },
-			Compensate: func(input string) (string, error) { return git.UndoCommit() },
+			Name: "git commit -m 'portal-meta'",
+			Run:  func() (err error) { _, err = git.Commit("portal-meta"); return },
+			Undo: func() (err error) { _, err = git.UndoCommit(); return },
 		},
 		{
 			Name: "git stash backup patch",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git stash push -m \"portal-patch-%s\" --include-untracked", now))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git stash push -m \"portal-patch-%s\" --include-untracked", now))
+				return
 			},
-			Compensate: func(input string) (string, error) {
-				return shell.Execute("git stash pop")
+			Undo: func() (err error) {
+				_, err = shell.Execute("git stash pop")
+				return
 			},
-			Exclude: !patch,
 		},
 		{
 			Name: "git checkout portal branch",
-			Run: func() (string, error) {
-				_, err := shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
-				return currentBranch, err
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
+				return
 			},
-			Compensate: func(currentBranch string) (string, error) {
-				shell.Execute(fmt.Sprintf("git checkout %s --progress", currentBranch))
-
-				return shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+			Undo: func() (err error) {
+				if _, err = shell.Execute(fmt.Sprintf("git checkout %s --progress", currentBranch)); err != nil {
+					return
+				}
+				_, err = shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+				return
 			},
 		},
 		{
 			Name: "git push portal branch",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git push origin %s --progress", portalBranch))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git push origin %s --progress", portalBranch))
+				return
 			},
-			Compensate: func(originalBranch string) (string, error) {
-				return shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+			Undo: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+				return
 			},
 			Retries: 1,
 		},
 		{
 			Name: "git checkout to original branch",
-			Run: func() (string, error) {
-				return shell.Execute("git checkout - --progress")
+			Run: func() (err error) {
+				_, err = shell.Execute("git checkout - --progress")
+				return
 			},
 		},
 		{
 			Name: "delete local portal branch",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+				return
 			},
-			Compensate: func(originalBranch string) (string, error) {
-				return shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
+			Undo: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
+				return
 			},
 		},
 		{
 			Name: "clear git workspace",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git reset --hard %s", remoteTrackingBranch))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git reset --hard %s", remoteTrackingBranch))
+				return
 			},
 		},
 	}

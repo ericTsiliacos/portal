@@ -11,47 +11,52 @@ func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string)
 	return []saga.Step{
 		{
 			Name: "git rebase against remote working branch",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git rebase origin/%s", startingBranch))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git rebase origin/%s", startingBranch))
+				return
 			},
-			Compensate: func(input string) (string, error) {
-				return "", nil
+			Undo: func() (err error) {
+				return
 			},
 		},
 		{
 			Name: "git reset to pusher sha",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git reset --hard %s", pusherSha))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git reset --hard %s", pusherSha))
+				return
 			},
-			Compensate: func(input string) (string, error) {
-				return "", nil
+			Undo: func() (err error) {
+				return
 			},
 		},
 		{
 			Name: "git rebase portal work in progress",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git rebase origin/%s~1", portalBranch))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git rebase origin/%s~1", portalBranch))
+				return
 			},
-			Compensate: func(input string) (string, error) {
-				return "", nil
+			Undo: func() (err error) {
+				return
 			},
 		},
 		{
 			Name: "git reset commits",
-			Run: func() (string, error) {
-				return shell.Execute("git reset HEAD^")
+			Run: func() (err error) {
+				_, err = shell.Execute("git reset HEAD^")
+				return
 			},
-			Compensate: func(input string) (string, error) {
-				return "", nil
+			Undo: func() (err error) {
+				return
 			},
 		},
 		{
 			Name: "delete remote portal branch",
-			Run: func() (string, error) {
-				return shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+			Run: func() (err error) {
+				_, err = shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+				return
 			},
-			Compensate: func(input string) (string, error) {
-				return "", nil
+			Undo: func() (err error) {
+				return
 			},
 		},
 	}

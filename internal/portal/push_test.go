@@ -25,8 +25,8 @@ func TestPortalPushSaga(t *testing.T) {
 
 	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	steps := PushSagaSteps(portalBranch, now, "v1.0.0", true)
-	saga := saga.Saga{Steps: steps, Verbose: testing.Verbose()}
+	steps := PushSagaSteps(portalBranch, now, "v1.0.0")
+	saga := saga.New(steps)
 	errors := saga.Run()
 
 	assert.Empty(t, errors)
@@ -39,7 +39,7 @@ func TestPortalPushSaga(t *testing.T) {
 func TestPortalPushSagaWithFailures(t *testing.T) {
 	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	steps := PushSagaSteps(portalBranch, now, "v1.0.0", true)
+	steps := PushSagaSteps(portalBranch, now, "v1.0.0")
 
 	for i := 1; i < len(steps); i++ {
 		fmt.Printf("test run %d:", i)
@@ -62,16 +62,15 @@ func testPortalPushSagaFailure(t *testing.T, portalBranch string, now string, in
 	check(err)
 	defer fileHandle.Close()
 
-	steps := PushSagaSteps(portalBranch, now, "v1.0.0", true)
+	steps := PushSagaSteps(portalBranch, now, "v1.0.0")
 	steps = steps[0 : len(steps)-index]
 	stepsWithError := append(steps, saga.Step{
 		Name: "Boom!",
-		Run: func() (string, error) {
-			return "", errors.New("uh oh!")
+		Run: func() error {
+			return errors.New("uh oh!")
 		},
 	})
-
-	saga := saga.Saga{Steps: stepsWithError, Verbose: testing.Verbose()}
+	saga := saga.New(stepsWithError)
 	errors := saga.Run()
 
 	assert.NotEmpty(t, errors)

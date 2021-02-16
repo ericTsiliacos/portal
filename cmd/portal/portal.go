@@ -31,7 +31,6 @@ func main() {
 		SetDescription("Push changes to a portal branch").
 		AddFlag("verbose,v", "verbose output", commando.Bool, false).
 		AddFlag("strategy,s", "git-duet, git-together", commando.String, "auto").
-		AddFlag("patch,p", "create and stash patch", commando.Bool, false).
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
@@ -39,7 +38,6 @@ func main() {
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
-			patch, _ := flags["patch"].GetBool()
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
@@ -55,10 +53,10 @@ func main() {
 
 			now := time.Now().Format(time.RFC3339)
 
-			pushSteps := portal.PushSagaSteps(portalBranch, now, version, patch)
+			pushSteps := portal.PushSagaSteps(portalBranch, now, version)
 
 			errors := stylized(verbose, func() []string {
-				saga := saga.Saga{Steps: pushSteps, Verbose: verbose}
+				saga := saga.New(pushSteps)
 				return saga.Run()
 			})
 
@@ -109,7 +107,7 @@ func main() {
 			pullSteps := portal.PullSagaSteps(startingBranch, portalBranch, sha)
 
 			errors := stylized(verbose, func() []string {
-				saga := saga.Saga{Steps: pullSteps, Verbose: verbose}
+				saga := saga.New(pullSteps)
 				return saga.Run()
 			})
 

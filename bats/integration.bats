@@ -110,7 +110,7 @@ load './test_helpers/portal.bash'
   git add .
   git commit -m "work in progress"
   touch bar.text
-  run test_portal push --patch
+  run test_portal push
   assert_success
 
   run git stash list -n 1

@@ -11,95 +11,72 @@ func TestSagaMultipleSuccessfulSteps(t *testing.T) {
 	globalState := 0
 	steps := []Step{
 		{
-			Name:       "addOne",
-			Run:        func() (string, error) { globalState = globalState + 1; return "", nil },
-			Compensate: func(input string) (string, error) { globalState = globalState - 1; return "", nil },
+			Name: "addOne",
+			Run:  func() (err error) { globalState = globalState + 1; return },
+			Undo: func() (err error) { globalState = globalState - 1; return },
 		},
 		{
 			Name: "addOne",
-			Run:  func() (string, error) { globalState = globalState + 1; return "", nil },
+			Run:  func() (err error) { globalState = globalState + 1; return },
 		},
 	}
 
-	saga := Saga{Steps: steps}
+	saga := New(steps)
 	saga.Run()
 
 	assert.Equal(t, globalState, 2)
 }
 
-func TestSagaMultipleSuccessfulStepsWithExclusion(t *testing.T) {
-	globalState := 0
-	steps := []Step{
-		{
-			Name:       "addOne",
-			Run:        func() (string, error) { globalState = globalState + 1; return "", nil },
-			Compensate: func(input string) (string, error) { globalState = globalState - 1; return "", nil },
-		},
-		{
-			Name:    "addOne",
-			Run:     func() (string, error) { globalState = globalState + 1; return "", nil },
-			Exclude: true,
-		},
-	}
-
-	saga := Saga{Steps: steps}
-	saga.Run()
-
-	assert.Equal(t, globalState, 1)
-}
 func TestSagaWithFailure(t *testing.T) {
 	globalState := 0
 	steps := []Step{
 		{
-			Name:       "addOne",
-			Run:        func() (string, error) { globalState = globalState + 1; return "", nil },
-			Compensate: func(input string) (string, error) { globalState = globalState - 1; return "", nil },
+			Name: "addOne",
+			Run:  func() (err error) { globalState = globalState + 1; return },
+			Undo: func() (err error) { globalState = globalState - 1; return },
 		},
 		{
-			Name:       "addTwo",
-			Run:        func() (string, error) { globalState = globalState + 2; return "", nil },
-			Compensate: func(input string) (string, error) { globalState = globalState - 2; return "", nil },
+			Name: "addTwo",
+			Run:  func() (err error) { globalState = globalState + 2; return },
+			Undo: func() (err error) { globalState = globalState - 2; return },
 		},
 		{
 			Name: "boom!",
-			Run:  func() (string, error) { return "", errors.New("uh oh!") },
+			Run:  func() (err error) { return errors.New("uh oh!") },
 		},
 	}
 
-	saga := Saga{Steps: steps}
+	saga := New(steps)
 	saga.Run()
 
 	assert.Equal(t, globalState, 0)
 }
 
-func TestSagaWithMissingCompensate(t *testing.T) {
+func TestSagaWithMissingUndo(t *testing.T) {
 	globalState := 0
-	compensationInput := ""
 	steps := []Step{
 		{
 			Name: "addOne",
-			Run:  func() (string, error) { globalState = globalState + 1; return "compensate", nil },
-			Compensate: func(input string) (string, error) {
+			Run:  func() (err error) { globalState = globalState + 1; return },
+			Undo: func() (err error) {
 				globalState = globalState - 1
-				compensationInput = input
-				return "", nil
+				return
 			},
 		},
 		{
 			Name: "addTwo",
-			Run:  func() (string, error) { globalState = globalState + 2; return "", nil },
+			Run:  func() (err error) { globalState = globalState + 2; return },
 		},
 		{
 			Name: "boom!",
-			Run:  func() (string, error) { return "", errors.New("uh oh!") },
+			Run:  func() (err error) { return errors.New("uh oh!") },
 		},
 	}
 
-	saga := Saga{Steps: steps}
+	saga := New(steps)
 	saga.Run()
 
 	assert.Equal(t, globalState, 2)
-	assert.Equal(t, compensationInput, "compensate")
 }
 
 func TestSagaWithRetries(t *testing.T) {
@@ -107,26 +84,26 @@ func TestSagaWithRetries(t *testing.T) {
 	totalRetries := 2
 	steps := []Step{
 		{
-			Name:       "addOne",
-			Run:        func() (string, error) { globalState = globalState + 1; return "", nil },
-			Compensate: func(input string) (string, error) { globalState = globalState - 2; return "", nil },
+			Name: "addOne",
+			Run:  func() (err error) { globalState = globalState + 1; return },
+			Undo: func() (err error) { globalState = globalState - 2; return },
 		},
 		{
 			Name: "retries",
-			Run: func() (string, error) {
+			Run: func() (err error) {
 				if totalRetries == 0 {
 					globalState = globalState + 1
-					return "", nil
+					return
 				} else {
 					totalRetries = totalRetries - 1
-					return "", errors.New("boom!")
+					return errors.New("boom!")
 				}
 			},
 			Retries: 2,
 		},
 	}
 
-	saga := Saga{Steps: steps}
+	saga := New(steps)
 	saga.Run()
 
 	assert.Equal(t, globalState, 2)

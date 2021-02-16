@@ -62,7 +62,7 @@ func Patch(remoteTrackingBranch string, dateTime string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fileName := buildPatchFileName(dateTime)
+	fileName := BuildPatchFileName(dateTime)
 	f, err := os.Create(fileName)
 	if err != nil {
 		return "", err
@@ -120,6 +120,6 @@ func BranchNameStrategy(strategyName string) (string, error) {
 	return branchNames[0], nil
 }
 
-func buildPatchFileName(dateTime string) string {
+func BuildPatchFileName(dateTime string) string {
 	return fmt.Sprintf("portal-%s.patch", dateTime)
 }
