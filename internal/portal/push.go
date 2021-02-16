@@ -7,6 +7,7 @@ import (
 
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
+	"gopkg.in/yaml.v2"
 )
 
 func PushSagaSteps(portalBranch string, now string, version string) []saga.Step {
@@ -31,7 +32,17 @@ func PushSagaSteps(portalBranch string, now string, version string) []saga.Step 
 		{
 			Name: "git commit -m 'portal-wip'",
 			Run: func() (err error) {
-				cmd := exec.Command("git", "commit", "--allow-empty", "-m", "portal-wip")
+				c := Meta{}
+				c.Meta.WorkingBranch = currentBranch
+				c.Meta.Sha = sha
+				c.Meta.Version = version
+
+				data, marshalError := yaml.Marshal(&c)
+				if marshalError != nil {
+					return err
+				}
+
+				cmd := exec.Command("git", "commit", "--allow-empty", "-m", string(data))
 				_, err = cmd.CombinedOutput()
 				return
 			},
@@ -61,44 +72,6 @@ func PushSagaSteps(portalBranch string, now string, version string) []saga.Step 
 			},
 			Undo: func() (err error) {
 				cmd := exec.Command("rm", BuildPatchFileName(now))
-				_, err = cmd.CombinedOutput()
-				return
-			},
-		},
-		{
-			Name: "create portal-meta.yml",
-			Run: func() (err error) {
-				_, err = WritePortalMetadata("portal-meta.yml", currentBranch, sha, version)
-				return
-			},
-			Undo: func() (err error) {
-				cmd := exec.Command("rm", "portal-meta.yml")
-				_, err = cmd.CombinedOutput()
-				return
-			},
-		},
-		{
-			Name: "git add portal-meta.yml",
-			Run: func() (err error) {
-				cmd := exec.Command("git", "add", "portal-meta.yml")
-				_, err = cmd.CombinedOutput()
-				return
-			},
-			Undo: func() (err error) {
-				cmd := exec.Command("git", "reset")
-				_, err = cmd.CombinedOutput()
-				return
-			},
-		},
-		{
-			Name: "git commit -m 'portal-meta'",
-			Run: func() (err error) {
-				cmd := exec.Command("git", "commit", "--allow-empty", "-m", "portal-meta")
-				_, err = cmd.CombinedOutput()
-				return
-			},
-			Undo: func() (err error) {
-				cmd := exec.Command("git", "reset", "HEAD^")
 				_, err = cmd.CombinedOutput()
 				return
 			},

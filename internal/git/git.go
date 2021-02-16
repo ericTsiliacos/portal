@@ -117,8 +117,8 @@ func Fetch() (string, error) {
 	return shell.Execute("git fetch")
 }
 
-func ShowFile(branch string, fileName string) (string, error) {
-	return shell.Execute(fmt.Sprintf("git show origin/%s:%s", branch, fileName))
+func ShowCommitMessage(branch string) (string, error) {
+	return shell.Execute(fmt.Sprintf("git log origin/%s --format=%%B -n 1", branch))
 }
 
 func parseRefBoundary(revisionBoundaries string) string {

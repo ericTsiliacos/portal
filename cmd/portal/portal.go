@@ -91,7 +91,7 @@ func main() {
 
 			_, _ = git.Fetch()
 
-			metaFileContents, _ := git.ShowFile(portalBranch, "portal-meta.yml")
+			metaFileContents, _ := git.ShowCommitMessage(portalBranch)
 			config, _ := portal.GetConfiguration(metaFileContents)
 			workingBranch := config.Meta.WorkingBranch
 			pusherVersion := semver.Canonical(config.Meta.Version)

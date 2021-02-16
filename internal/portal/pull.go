@@ -34,7 +34,7 @@ func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string)
 		{
 			Name: "git rebase portal work in progress",
 			Run: func() (err error) {
-				cmd := exec.Command("git", "rebase", fmt.Sprintf("origin/%s~1", portalBranch))
+				cmd := exec.Command("git", "rebase", fmt.Sprintf("origin/%s", portalBranch))
 				_, err = cmd.CombinedOutput()
 				return
 			},
