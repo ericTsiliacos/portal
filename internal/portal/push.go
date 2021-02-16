@@ -2,11 +2,11 @@ package portal
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
-	"github.com/ericTsiliacos/portal/internal/shell"
 )
 
 func PushSagaSteps(portalBranch string, now string, version string) []saga.Step {
@@ -18,24 +18,50 @@ func PushSagaSteps(portalBranch string, now string, version string) []saga.Step 
 		{
 			Name: "git add .",
 			Run: func() (err error) {
-				_, err = exec.Command("git", "add", ".").CombinedOutput()
+				cmd := exec.Command("git", "add", ".")
+				_, err = cmd.CombinedOutput()
 				return
 			},
-			Undo: func() (err error) { _, err = git.Reset(); return },
+			Undo: func() (err error) {
+				cmd := exec.Command("git", "reset")
+				_, err = cmd.CombinedOutput()
+				return
+			},
 		},
 		{
 			Name: "git commit -m 'portal-wip'",
-			Run:  func() (err error) { _, err = git.Commit("portal-wip"); return },
-			Undo: func() (err error) { _, err = git.UndoCommit(); return },
+			Run: func() (err error) {
+				cmd := exec.Command("git", "commit", "--allow-empty", "-m", "portal-wip")
+				_, err = cmd.CombinedOutput()
+				return
+			},
+			Undo: func() (err error) {
+				cmd := exec.Command("git", "reset", "HEAD^")
+				_, err = cmd.CombinedOutput()
+				return
+			},
 		},
 		{
 			Name: "create git patch of work in progress",
 			Run: func() (err error) {
-				_, err = Patch(remoteTrackingBranch, now)
+				patchFileName := BuildPatchFileName(now)
+				file, err := os.Create(patchFileName)
+
+				if err != nil {
+					return err
+				}
+
+				defer file.Close()
+
+				cmd := exec.Command("git", "format-patch", remoteTrackingBranch, "--stdout")
+				cmd.Stdout = file
+				err = cmd.Run()
+
 				return
 			},
 			Undo: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("rm %s", BuildPatchFileName(now)))
+				cmd := exec.Command("rm", BuildPatchFileName(now))
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
@@ -46,53 +72,78 @@ func PushSagaSteps(portalBranch string, now string, version string) []saga.Step 
 				return
 			},
 			Undo: func() (err error) {
-				_, err = shell.Execute("rm portal-meta.yml")
+				cmd := exec.Command("rm", "portal-meta.yml")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
 		{
 			Name: "git add portal-meta.yml",
-			Run:  func() (err error) { _, err = git.Add("portal-meta.yml"); return },
-			Undo: func() (err error) { _, err = git.Reset(); return },
+			Run: func() (err error) {
+				cmd := exec.Command("git", "add", "portal-meta.yml")
+				_, err = cmd.CombinedOutput()
+				return
+			},
+			Undo: func() (err error) {
+				cmd := exec.Command("git", "reset")
+				_, err = cmd.CombinedOutput()
+				return
+			},
 		},
 		{
 			Name: "git commit -m 'portal-meta'",
-			Run:  func() (err error) { _, err = git.Commit("portal-meta"); return },
-			Undo: func() (err error) { _, err = git.UndoCommit(); return },
+			Run: func() (err error) {
+				cmd := exec.Command("git", "commit", "--allow-empty", "-m", "portal-meta")
+				_, err = cmd.CombinedOutput()
+				return
+			},
+			Undo: func() (err error) {
+				cmd := exec.Command("git", "reset", "HEAD^")
+				_, err = cmd.CombinedOutput()
+				return
+			},
 		},
 		{
 			Name: "git stash backup patch",
 			Run: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git stash push -m \"portal-patch-%s\" --include-untracked", now))
+				cmd := exec.Command("git", "stash", "push", "-m", fmt.Sprintf("\"portal-patch-%s\"", now), "--include-untracked")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 			Undo: func() (err error) {
-				_, err = shell.Execute("git stash pop")
+				cmd := exec.Command("git", "stash", "pop")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
 		{
 			Name: "git checkout portal branch",
 			Run: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
+				cmd := exec.Command("git", "checkout", "-b", portalBranch, "--progress")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 			Undo: func() (err error) {
-				if _, err = shell.Execute(fmt.Sprintf("git checkout %s --progress", currentBranch)); err != nil {
+				cmd := exec.Command("git", "checkout", currentBranch, "--progress")
+				if _, err = cmd.CombinedOutput(); err != nil {
 					return
 				}
-				_, err = shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+
+				cmd = exec.Command("git", "branch", "-D", portalBranch)
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
 		{
 			Name: "git push portal branch",
 			Run: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git push origin %s --progress", portalBranch))
+				cmd := exec.Command("git", "push", "origin", portalBranch, "--progress")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 			Undo: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git push origin --delete %s --progress", portalBranch))
+				cmd := exec.Command("git", "push", "origin", "--delete", portalBranch, "--progress")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 			Retries: 1,
@@ -100,25 +151,29 @@ func PushSagaSteps(portalBranch string, now string, version string) []saga.Step 
 		{
 			Name: "git checkout to original branch",
 			Run: func() (err error) {
-				_, err = shell.Execute("git checkout - --progress")
+				cmd := exec.Command("git", "checkout", "-", "--progress")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
 		{
 			Name: "delete local portal branch",
 			Run: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git branch -D %s", portalBranch))
+				cmd := exec.Command("git", "branch", "-D", portalBranch)
+				_, err = cmd.CombinedOutput()
 				return
 			},
 			Undo: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git checkout -b %s --progress", portalBranch))
+				cmd := exec.Command("git", "checkout", "-b", portalBranch, "--progress")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
 		{
 			Name: "clear git workspace",
 			Run: func() (err error) {
-				_, err = shell.Execute(fmt.Sprintf("git reset --hard %s", remoteTrackingBranch))
+				cmd := exec.Command("git", "reset", "--hard", remoteTrackingBranch)
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
