@@ -14,9 +14,9 @@ import (
 func TestPortalPushSaga(t *testing.T) {
 	rootDirectory := t.TempDir()
 
-	SetupBareGitProject(t, rootDirectory)
+	SetupBareGitRepository(t, rootDirectory)
 
-	check(os.Chdir(SetupProjectClone(t, rootDirectory)))
+	check(os.Chdir(CloneRepository(t, rootDirectory, "clone1")))
 
 	fileName := "foo"
 	fileHandle, err := os.Create(fileName)
@@ -53,9 +53,9 @@ func TestPortalPushSagaWithFailures(t *testing.T) {
 func testPortalPushSagaFailure(t *testing.T, portalBranch string, now string, index int) {
 	rootDirectory := t.TempDir()
 
-	SetupBareGitProject(t, rootDirectory)
+	SetupBareGitRepository(t, rootDirectory)
 
-	check(os.Chdir(SetupProjectClone(t, rootDirectory)))
+	check(os.Chdir(CloneRepository(t, rootDirectory, "clone1")))
 
 	fileName := "foo"
 	fileHandle, err := os.Create(fileName)

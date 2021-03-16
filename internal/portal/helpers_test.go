@@ -14,7 +14,7 @@ func check(e error) {
 	}
 }
 
-func SetupBareGitProject(t *testing.T, rootDirectory string) {
+func SetupBareGitRepository(t *testing.T, rootDirectory string) {
 	t.Helper()
 
 	projectPath := filepath.Join(rootDirectory, "project")
@@ -42,13 +42,13 @@ func SetupBareGitProject(t *testing.T, rootDirectory string) {
 	check(os.Chdir(rootDirectory))
 }
 
-func SetupProjectClone(t *testing.T, rootDirectory string) string {
+func CloneRepository(t *testing.T, rootDirectory string, name string) string {
 	t.Helper()
 
-	_, err := exec.Command("git", "clone", "project", "clone1", "--progress").Output()
+	_, err := exec.Command("git", "clone", "project", name, "--progress").Output()
 	check(err)
 
-	clonePath := filepath.Join(rootDirectory, "clone1")
+	clonePath := filepath.Join(rootDirectory, name)
 	check(os.Chdir(clonePath))
 
 	return clonePath
