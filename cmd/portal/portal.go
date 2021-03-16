@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
+	"os/signal"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/ericTsiliacos/portal/internal/constants"
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/logger"
@@ -16,6 +18,11 @@ import (
 )
 
 var version string
+
+const (
+	exitCodeErr       = 1
+	exitCodeInterrupt = 2
+)
 
 func main() {
 
@@ -36,7 +43,7 @@ func main() {
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
 			logger.LogInfo.Println(git.Version())
 
-			verbose, _ := flags["verbose"].GetBool()
+			// verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
@@ -53,15 +60,35 @@ func main() {
 
 			now := time.Now().Format(time.RFC3339)
 
-			pushSteps := portal.PushSagaSteps(portalBranch, now, version)
+			ctx, cancel := context.WithCancel(context.Background())
+			signalChan := make(chan os.Signal, 1)
+			signal.Notify(signalChan, os.Interrupt)
 
-			errors := stylized(verbose, func() []string {
-				saga := saga.New(pushSteps)
-				return saga.Run()
-			})
+			defer func() {
+				signal.Stop(signalChan)
+				cancel()
+			}()
+
+			go func() {
+				select {
+				case <-signalChan:
+					log.Println("CANCELING")
+					cancel()
+				case <-ctx.Done():
+				}
+				<-signalChan
+				os.Exit(exitCodeInterrupt)
+			}()
+
+			pushSteps := portal.PushSagaSteps(ctx, portalBranch, now, version)
+
+			saga := saga.New(pushSteps)
+			errors := saga.Run()
 
 			if errors != nil {
-				fmt.Println(errors)
+				for _, error := range errors {
+					fmt.Println(error)
+				}
 			} else {
 				fmt.Println("✨ Sent!")
 			}
@@ -77,7 +104,7 @@ func main() {
 			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
 			logger.LogInfo.Println(git.Version())
 
-			verbose, _ := flags["verbose"].GetBool()
+			// verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
@@ -106,35 +133,19 @@ func main() {
 
 			pullSteps := portal.PullSagaSteps(startingBranch, portalBranch, sha)
 
-			errors := stylized(verbose, func() []string {
-				saga := saga.New(pullSteps)
-				return saga.Run()
-			})
+			saga := saga.New(pullSteps)
+			errors := saga.Run()
 
 			if errors != nil {
-				fmt.Println(errors)
+				for _, error := range errors {
+					fmt.Println(error)
+				}
 			} else {
 				fmt.Println("✨ Got it!")
 			}
 		})
 
 	commando.Parse(nil)
-}
-
-func stylized(verbose bool, fn func() []string) []string {
-	if verbose {
-		return fn()
-	} else {
-		s := spinner.New(spinner.CharSets[23], 100*time.Millisecond)
-		s.Suffix = " Coming your way..."
-		s.Start()
-
-		err := fn()
-
-		s.Stop()
-
-		return err
-	}
 }
 
 func validate(valid bool, message string) {
