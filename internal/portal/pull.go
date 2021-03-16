@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
 )
 
 func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string) []saga.Step {
+	remoteTrackingBranch := git.GetRemoteTrackingBranch()
+	currentBranch := git.GetCurrentBranch()
+	startingSha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+
 	return []saga.Step{
 		{
 			Name: "git rebase against remote working branch",
@@ -17,6 +22,8 @@ func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string)
 				return
 			},
 			Undo: func() (err error) {
+				cmd := exec.Command("git", "reset", "--hard", startingSha)
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
@@ -27,18 +34,12 @@ func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string)
 				_, err = cmd.CombinedOutput()
 				return
 			},
-			Undo: func() (err error) {
-				return
-			},
 		},
 		{
 			Name: "git rebase portal work in progress",
 			Run: func() (err error) {
 				cmd := exec.Command("git", "rebase", fmt.Sprintf("origin/%s", portalBranch))
 				_, err = cmd.CombinedOutput()
-				return
-			},
-			Undo: func() (err error) {
 				return
 			},
 		},
@@ -50,6 +51,8 @@ func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string)
 				return
 			},
 			Undo: func() (err error) {
+				cmd := exec.Command("git", "add", ".")
+				_, err = cmd.CombinedOutput()
 				return
 			},
 		},
@@ -58,9 +61,6 @@ func PullSagaSteps(startingBranch string, portalBranch string, pusherSha string)
 			Run: func() (err error) {
 				cmd := exec.Command("git", "push", "origin", "--delete", portalBranch, "--progress")
 				_, err = cmd.CombinedOutput()
-				return
-			},
-			Undo: func() (err error) {
 				return
 			},
 		},
