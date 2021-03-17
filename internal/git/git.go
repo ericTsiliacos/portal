@@ -69,10 +69,6 @@ func GitTogether() []string {
 	return strings.Split(activeAuthors, "+")
 }
 
-func BuildPatch(remoteTrackingBranch string) (string, error) {
-	return shell.Execute(fmt.Sprintf("git format-patch %s --stdout", remoteTrackingBranch))
-}
-
 func GetCurrentBranch() string {
 	currentBranch, _ := shell.Execute("git rev-parse --abbrev-ref HEAD")
 	cleanCurrentBranch := strings.TrimSuffix(currentBranch, "\n")
@@ -94,23 +90,6 @@ func GetBoundarySha(remoteTrackingBranch string, currentBranch string) string {
 		cleanCurrentRev := strings.TrimSuffix(currentRev, "\n")
 		return cleanCurrentRev
 	}
-}
-
-func Add(files string) (string, error) {
-	_, err := shell.Execute(fmt.Sprintf("git add %s", files))
-	return files, err
-}
-
-func Reset() (string, error) {
-	return shell.Execute("git reset")
-}
-
-func UndoCommit() (string, error) {
-	return shell.Execute("git reset HEAD^")
-}
-
-func Commit(message string) (string, error) {
-	return shell.Execute(fmt.Sprintf("git commit --allow-empty -m %s", message))
 }
 
 func Fetch() (string, error) {
