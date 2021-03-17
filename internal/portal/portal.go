@@ -4,9 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/portal/strategies"
 	"gopkg.in/yaml.v2"
 )
@@ -27,58 +25,6 @@ func GetConfiguration(yamlContent string) (*Meta, error) {
 	}
 
 	return c, err
-}
-
-func WritePortalMetadata(fileName string, branch string, sha string, version string) (string, error) {
-	f, err := os.Create(fileName)
-	if err != nil {
-		fmt.Println(err)
-		return "", err
-	}
-
-	c := Meta{}
-	c.Meta.WorkingBranch = branch
-	c.Meta.Sha = sha
-	c.Meta.Version = version
-
-	d, marshalError := yaml.Marshal(&c)
-	if marshalError != nil {
-		log.Fatalf("error: %v", marshalError)
-	}
-
-	_, err = f.WriteString(string(d))
-	if err != nil {
-		fmt.Println(err)
-		_ = f.Close()
-
-		return "", err
-	}
-
-	return fileName, nil
-}
-
-func Patch(remoteTrackingBranch string, dateTime string) (string, error) {
-	patch, err := git.BuildPatch(remoteTrackingBranch)
-	if err != nil {
-		return "", err
-	}
-	fileName := BuildPatchFileName(dateTime)
-	f, err := os.Create(fileName)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = f.WriteString(patch)
-	if err != nil {
-		return "", err
-	}
-
-	err = f.Close()
-	if err != nil {
-		return "", err
-	}
-
-	return fileName, nil
 }
 
 func BranchNameStrategy(strategyName string) (string, error) {
