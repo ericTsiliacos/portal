@@ -37,7 +37,7 @@ func (s *Saga) Run() (errors []string) {
 func undo(undoSteps []Step) (err error) {
 	for _, undoStep := range undoSteps {
 		if undoStep.Undo != nil {
-			if err != undoStep.Undo() {
+			if err = undoStep.Undo(); err != nil {
 				return
 			}
 		}
