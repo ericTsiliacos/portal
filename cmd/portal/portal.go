@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -16,6 +18,10 @@ import (
 )
 
 var version string
+
+const (
+	exitCodeInterrupt = 2
+)
 
 func main() {
 
@@ -33,8 +39,7 @@ func main() {
 		AddFlag("strategy,s", "git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
-			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
-			logger.LogInfo.Println(git.Version())
+			logger.LogInfo.Println(fmt.Sprintf("Portal: %s", version))
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
@@ -53,7 +58,26 @@ func main() {
 
 			now := time.Now().Format(time.RFC3339)
 
-			pushSteps := portal.PushSagaSteps(portalBranch, now, version)
+			ctx, cancel := context.WithCancel(context.Background())
+			signalChan := make(chan os.Signal, 1)
+			signal.Notify(signalChan, os.Interrupt)
+
+			defer func() {
+				signal.Stop(signalChan)
+				cancel()
+			}()
+
+			go func() {
+				select {
+				case <-signalChan:
+					cancel()
+				case <-ctx.Done():
+				}
+				<-signalChan
+				os.Exit(exitCodeInterrupt)
+			}()
+
+			pushSteps := portal.PushSagaSteps(ctx, portalBranch, now, version, verbose)
 
 			errors := stylized(verbose, func() []string {
 				saga := saga.New(pushSteps)
@@ -74,8 +98,7 @@ func main() {
 		AddFlag("strategy,s", "git-duet, git-together", commando.String, "auto").
 		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
 
-			logger.LogInfo.Println(fmt.Sprintf("Version: %s", version))
-			logger.LogInfo.Println(git.Version())
+			logger.LogInfo.Println(fmt.Sprintf("Portal: %s", version))
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
@@ -104,7 +127,26 @@ func main() {
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
 			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
-			pullSteps := portal.PullSagaSteps(startingBranch, portalBranch, sha)
+			ctx, cancel := context.WithCancel(context.Background())
+			signalChan := make(chan os.Signal, 1)
+			signal.Notify(signalChan, os.Interrupt)
+
+			defer func() {
+				signal.Stop(signalChan)
+				cancel()
+			}()
+
+			go func() {
+				select {
+				case <-signalChan:
+					cancel()
+				case <-ctx.Done():
+				}
+				<-signalChan
+				os.Exit(exitCodeInterrupt)
+			}()
+
+			pullSteps := portal.PullSagaSteps(ctx, startingBranch, portalBranch, sha, verbose)
 
 			errors := stylized(verbose, func() []string {
 				saga := saga.New(pullSteps)

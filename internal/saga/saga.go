@@ -5,10 +5,9 @@ type Saga struct {
 }
 
 type Step struct {
-	Name    string
-	Run     func() error
-	Undo    func() error
-	Retries int
+	Name string
+	Run  func() error
+	Undo func() error
 }
 
 func New(steps []Step) Saga {
@@ -18,9 +17,7 @@ func New(steps []Step) Saga {
 func (s *Saga) Run() (errors []string) {
 	for i, step := range s.steps {
 
-		if err := retry(step.Retries, func() error {
-			return s.steps[i].Run()
-		}); err != nil {
+		if err := step.Run(); err != nil {
 			errors = append(errors, err.Error())
 			if latestError := undo(reverseSteps(s.steps[0:i])); latestError != nil {
 				return append(errors, latestError.Error())
@@ -51,20 +48,4 @@ func reverseSteps(steps []Step) []Step {
 		steps[i], steps[j] = steps[j], steps[i]
 	}
 	return steps
-}
-
-func retry(attempts int, f func() error) (err error) {
-	for i := 0; ; i++ {
-		err = f()
-		if err == nil {
-			return
-		}
-
-		if i >= attempts {
-			break
-		}
-
-	}
-
-	return err
 }

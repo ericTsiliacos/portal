@@ -104,33 +104,3 @@ func TestSagaWithUndoFailure(t *testing.T) {
 	assert.Equal(t, globalState, 1)
 	assert.Equal(t, errs, []string{"uh oh!", "recovery error"})
 }
-
-func TestSagaWithRetries(t *testing.T) {
-	globalState := 0
-	totalRetries := 2
-	steps := []Step{
-		{
-			Name: "addOne",
-			Run:  func() (err error) { globalState = globalState + 1; return },
-			Undo: func() (err error) { globalState = globalState - 2; return },
-		},
-		{
-			Name: "retries",
-			Run: func() (err error) {
-				if totalRetries == 0 {
-					globalState = globalState + 1
-					return
-				} else {
-					totalRetries = totalRetries - 1
-					return errors.New("boom!")
-				}
-			},
-			Retries: 2,
-		},
-	}
-
-	saga := New(steps)
-	saga.Run()
-
-	assert.Equal(t, globalState, 2)
-}

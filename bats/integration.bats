@@ -100,33 +100,6 @@ load './test_helpers/portal.bash'
   portal_pull "clone2"
 }
 
-@test "push: stashes a patch of changes for safe-keeping" {
-  add_git_together "clone1" "clone2"
-
-  git_together "clone1"
-
-  pushd clone1
-  touch foobar.text
-  git add .
-  git commit -m "work in progress"
-  touch bar.text
-  run test_portal push
-  assert_success
-
-  run git stash list -n 1
-  assert_output -p "portal-patch-"
-
-  git stash pop
-  git am *.patch
-
-  git reset HEAD^
-
-  run git cherry -v
-  assert_output -p "work in progress"
-
-  assert_file_exist bar.text
-}
-
 @test "push/pull: option to provide branch naming strategy" {
   add_git_duet "clone1" "clone2"
   add_git_together "clone1" "clone2"

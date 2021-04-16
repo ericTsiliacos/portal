@@ -1,6 +1,7 @@
 package portal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -28,7 +29,7 @@ func TestPortalPullSaga(t *testing.T) {
 
 	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	pushSteps := PushSagaSteps(portalBranch, now, "v1.0.0")
+	pushSteps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
 	pushSaga := saga.New(pushSteps)
 	errors := pushSaga.Run()
 	assert.Empty(t, errors)
@@ -39,7 +40,7 @@ func TestPortalPullSaga(t *testing.T) {
 
 	check(os.Chdir(clone1Path))
 	git.Fetch()
-	pullSteps := PullSagaSteps(currentBranch, portalBranch, sha)
+	pullSteps := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
 	pullSaga := saga.New(pullSteps)
 	errors = pullSaga.Run()
 
@@ -53,7 +54,7 @@ func TestPortalPullSaga(t *testing.T) {
 func TestPortalPullSagaWithFailures(t *testing.T) {
 	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	pullSteps := PullSagaSteps("", "", "")
+	pullSteps := PullSagaSteps(context.TODO(), "", "", "", false)
 
 	for i := 1; i < len(pullSteps); i++ {
 		fmt.Printf("test run %d:", i)
@@ -78,7 +79,7 @@ func testPortalPullSagaFailure(t *testing.T, portalBranch string, now string, in
 	check(err)
 	defer fileHandle.Close()
 
-	pushSteps := PushSagaSteps(portalBranch, now, "v1.0.0")
+	pushSteps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
 	pushSaga := saga.New(pushSteps)
 	errs := pushSaga.Run()
 	assert.Empty(t, errs)
@@ -89,7 +90,7 @@ func testPortalPullSagaFailure(t *testing.T, portalBranch string, now string, in
 
 	check(os.Chdir(clone1Path))
 	git.Fetch()
-	pullSteps := PullSagaSteps(currentBranch, portalBranch, sha)
+	pullSteps := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
 	pullSteps = pullSteps[0 : len(pullSteps)-index]
 	stepsWithError := append(pullSteps, saga.Step{
 		Name: "Boom!",

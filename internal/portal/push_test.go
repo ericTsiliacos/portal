@@ -1,6 +1,7 @@
 package portal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -25,7 +26,7 @@ func TestPortalPushSaga(t *testing.T) {
 
 	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	steps := PushSagaSteps(portalBranch, now, "v1.0.0")
+	steps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
 	saga := saga.New(steps)
 	errors := saga.Run()
 
@@ -39,7 +40,7 @@ func TestPortalPushSaga(t *testing.T) {
 func TestPortalPushSagaWithFailures(t *testing.T) {
 	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	steps := PushSagaSteps(portalBranch, now, "v1.0.0")
+	steps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
 
 	for i := 1; i < len(steps); i++ {
 		fmt.Printf("test run %d:", i)
@@ -62,7 +63,7 @@ func testPortalPushSagaFailure(t *testing.T, portalBranch string, now string, in
 	check(err)
 	defer fileHandle.Close()
 
-	steps := PushSagaSteps(portalBranch, now, "v1.0.0")
+	steps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
 	steps = steps[0 : len(steps)-index]
 	stepsWithError := append(steps, saga.Step{
 		Name: "Boom!",

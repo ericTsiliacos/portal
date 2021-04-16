@@ -29,8 +29,8 @@ func init() {
 		panic(err)
 	}
 
-	LogInfo = log.New(logFile, "INFO: ", log.LstdFlags|log.Lshortfile)
-	LogError = log.New(logFile, "ERROR: ", log.LstdFlags|log.Lshortfile)
+	LogInfo = log.New(logFile, "INFO: ", log.LstdFlags)
+	LogError = log.New(logFile, "ERROR: ", log.LstdFlags)
 }
 
 func CloseLogOutput() {
