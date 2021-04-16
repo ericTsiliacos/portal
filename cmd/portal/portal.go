@@ -85,7 +85,9 @@ func main() {
 			})
 
 			if errors != nil {
-				fmt.Println(errors)
+				for _, error := range errors {
+					fmt.Println(error)
+				}
 			} else {
 				fmt.Println("✨ Sent!")
 			}
@@ -154,7 +156,9 @@ func main() {
 			})
 
 			if errors != nil {
-				fmt.Println(errors)
+				for _, error := range errors {
+					fmt.Println(error)
+				}
 			} else {
 				fmt.Println("✨ Got it!")
 			}
