@@ -25,21 +25,8 @@ Options
 
 ```
  -h, --help         displays usage information of the application or a command (default: false)
- -p, --patch        create and stash patch (default: false)
  -s, --strategy     git-duet, git-together (default: auto)
  -v, --verbose      verbose output (default: false)
-```
-
-### Patch option
-
-Creates and stashes a git patch of the pushed changes.
-
-The patch can be found at the head of `git stash list`. 
-
-To apply the patch run: `git am <patch>`.
-
-```bash
-portal push --patch
 ```
 
 ## Pull
