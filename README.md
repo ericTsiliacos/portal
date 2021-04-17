@@ -61,6 +61,6 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 
 ```bats ./bats```
 
-### Credit 
+## Credit 
 
-George Dean ([@gdean123](https://github.com/gdean123)) for the initial idea
+Initial idea: George Dean ([@gdean123](https://github.com/gdean123))
