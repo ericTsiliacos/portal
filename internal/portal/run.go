@@ -13,6 +13,12 @@ func Run(cmd *exec.Cmd, verbose bool) (err error) {
 	}
 
 	logger.LogInfo.Println(cmd.String())
-	err = cmd.Run()
+
+	output, err := cmd.CombinedOutput()
+
+	if verbose {
+		fmt.Println(string(output))
+	}
+
 	return
 }
