@@ -63,4 +63,4 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 
 ### Credit 
 
-George Dean (@gdean123) for the initial idea
+George Dean ([@gdean123](https://github.com/gdean123)) for the initial idea
