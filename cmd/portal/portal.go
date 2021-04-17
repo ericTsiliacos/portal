@@ -56,8 +56,6 @@ func main() {
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
 			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
 
-			now := time.Now().Format(time.RFC3339)
-
 			ctx, cancel := context.WithCancel(context.Background())
 			signalChan := make(chan os.Signal, 1)
 			signal.Notify(signalChan, os.Interrupt)
@@ -77,7 +75,11 @@ func main() {
 				os.Exit(exitCodeInterrupt)
 			}()
 
-			pushSteps := portal.PushSagaSteps(ctx, portalBranch, now, version, verbose)
+			pushSteps, err := portal.PushSagaSteps(ctx, portalBranch, version, verbose)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
+			}
 
 			errors := stylized(verbose, func() []string {
 				saga := saga.New(pushSteps)
@@ -125,7 +127,12 @@ func main() {
 
 			validate(semver.Major(pusherVersion) == semver.Major(pullerVersion), constants.DIFFERENT_VERSIONS)
 			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
-			startingBranch := git.GetCurrentBranch()
+			startingBranch, err := git.GetCurrentBranch()
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
+			}
+
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
 			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
@@ -148,7 +155,11 @@ func main() {
 				os.Exit(exitCodeInterrupt)
 			}()
 
-			pullSteps := portal.PullSagaSteps(ctx, startingBranch, portalBranch, sha, verbose)
+			pullSteps, err := portal.PullSagaSteps(ctx, startingBranch, portalBranch, sha, verbose)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
+			}
 
 			errors := stylized(verbose, func() []string {
 				saga := saga.New(pullSteps)

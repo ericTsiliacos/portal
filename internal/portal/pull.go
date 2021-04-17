@@ -9,10 +9,21 @@ import (
 	"github.com/ericTsiliacos/portal/internal/saga"
 )
 
-func PullSagaSteps(ctx context.Context, startingBranch string, portalBranch string, pusherSha string, verbose bool) []saga.Step {
-	remoteTrackingBranch := git.GetRemoteTrackingBranch()
-	currentBranch := git.GetCurrentBranch()
-	startingSha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+func PullSagaSteps(ctx context.Context, startingBranch string, portalBranch string, pusherSha string, verbose bool) (steps []saga.Step, err error) {
+	remoteTrackingBranch, err := git.GetRemoteTrackingBranch()
+	if err != nil {
+		return
+	}
+
+	currentBranch, err := git.GetCurrentBranch()
+	if err != nil {
+		return
+	}
+
+	startingSha, err := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+	if err != nil {
+		return
+	}
 
 	return []saga.Step{
 		{
@@ -51,5 +62,5 @@ func PullSagaSteps(ctx context.Context, startingBranch string, portalBranch stri
 				return Run(exec.CommandContext(ctx, "git", "push", "origin", "--delete", portalBranch, "--progress"), verbose)
 			},
 		},
-	}
+	}, nil
 }

@@ -9,10 +9,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func PushSagaSteps(ctx context.Context, portalBranch string, now string, version string, verbose bool) []saga.Step {
-	remoteTrackingBranch := git.GetRemoteTrackingBranch()
-	currentBranch := git.GetCurrentBranch()
-	sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+func PushSagaSteps(ctx context.Context, portalBranch string, version string, verbose bool) (steps []saga.Step, err error) {
+	remoteTrackingBranch, err := git.GetRemoteTrackingBranch()
+	if err != nil {
+		return
+	}
+
+	currentBranch, err := git.GetCurrentBranch()
+	if err != nil {
+		return
+	}
+
+	sha, err := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+	if err != nil {
+		return
+	}
 
 	return []saga.Step{
 		{
@@ -90,5 +101,5 @@ func PushSagaSteps(ctx context.Context, portalBranch string, now string, version
 				return Run(exec.CommandContext(ctx, "git", "reset", "--hard", remoteTrackingBranch), verbose)
 			},
 		},
-	}
+	}, nil
 }

@@ -6,27 +6,21 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/ericTsiliacos/portal/internal/saga"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPortalPushSaga(t *testing.T) {
-	rootDirectory := t.TempDir()
-
-	SetupBareGitRepository(t, rootDirectory)
-
-	check(os.Chdir(CloneRepository(t, rootDirectory, "clone1")))
-
 	fileName := "foo"
-	fileHandle, err := os.Create(fileName)
-	check(err)
-	defer fileHandle.Close()
-
-	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	steps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
+
+	pushSetup(t, fileName)
+
+	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	if err != nil {
+		t.FailNow()
+	}
 	saga := saga.New(steps)
 	errors := saga.Run()
 
@@ -38,20 +32,25 @@ func TestPortalPushSaga(t *testing.T) {
 }
 
 func TestPortalPushSagaWithFailures(t *testing.T) {
-	now := time.Now().Format(time.RFC3339)
+	fileName := "foo"
 	portalBranch := "pa-ir-portal"
-	steps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
+
+	pushSetup(t, fileName)
+	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	if err != nil {
+		t.FailNow()
+	}
 
 	for i := 1; i < len(steps); i++ {
 		fmt.Printf("test run %d:", i)
 		fmt.Println()
 		fmt.Println("-----------------")
 
-		testPortalPushSagaFailure(t, portalBranch, now, i)
+		testPortalPushSagaFailure(t, portalBranch, i)
 	}
 }
 
-func testPortalPushSagaFailure(t *testing.T, portalBranch string, now string, index int) {
+func testPortalPushSagaFailure(t *testing.T, portalBranch string, index int) {
 	rootDirectory := t.TempDir()
 
 	SetupBareGitRepository(t, rootDirectory)
@@ -63,7 +62,10 @@ func testPortalPushSagaFailure(t *testing.T, portalBranch string, now string, in
 	check(err)
 	defer fileHandle.Close()
 
-	steps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
+	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	if err != nil {
+		t.FailNow()
+	}
 	steps = steps[0 : len(steps)-index]
 	stepsWithError := append(steps, saga.Step{
 		Name: "Boom!",
@@ -79,4 +81,16 @@ func testPortalPushSagaFailure(t *testing.T, portalBranch string, now string, in
 	assert.False(t, RemoteBranchExists(t, portalBranch))
 	assert.False(t, LocalBranchExists(t, portalBranch))
 	assert.False(t, CleanIndex(t))
+}
+
+func pushSetup(t *testing.T, fileName string) {
+	rootDirectory := t.TempDir()
+
+	SetupBareGitRepository(t, rootDirectory)
+
+	check(os.Chdir(CloneRepository(t, rootDirectory, "clone1")))
+
+	fileHandle, err := os.Create(fileName)
+	check(err)
+	defer fileHandle.Close()
 }

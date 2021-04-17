@@ -65,26 +65,40 @@ func GitTogether() []string {
 	return strings.Split(activeAuthors, "+")
 }
 
-func GetCurrentBranch() string {
-	currentBranch, _ := shell.Execute("git rev-parse --abbrev-ref HEAD")
+func GetCurrentBranch() (string, error) {
+	currentBranch, err := shell.Execute("git rev-parse --abbrev-ref HEAD")
+	if err != nil {
+		return "", err
+	}
 	cleanCurrentBranch := strings.TrimSuffix(currentBranch, "\n")
-	return cleanCurrentBranch
+	return cleanCurrentBranch, nil
 }
 
-func GetRemoteTrackingBranch() string {
-	remoteTrackingBranch, _ := shell.Execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
+func GetRemoteTrackingBranch() (string, error) {
+	remoteTrackingBranch, err := shell.Execute("git rev-parse --abbrev-ref --symbolic-full-name @{u}")
+	if err != nil {
+		return "", err
+	}
 	cleanRemoteTrackingBranch := strings.TrimSuffix(remoteTrackingBranch, "\n")
-	return cleanRemoteTrackingBranch
+	return cleanRemoteTrackingBranch, nil
 }
 
-func GetBoundarySha(remoteTrackingBranch string, currentBranch string) string {
-	revisionBoundaries, _ := shell.Execute(fmt.Sprintf("git rev-list --boundary %s..%s", remoteTrackingBranch, currentBranch))
+func GetBoundarySha(remoteTrackingBranch string, currentBranch string) (string, error) {
+	revisionBoundaries, err := shell.Execute(fmt.Sprintf("git rev-list --boundary %s..%s", remoteTrackingBranch, currentBranch))
+	if err != nil {
+		return "", err
+	}
+
 	if len(revisionBoundaries) > 0 {
-		return parseRefBoundary(revisionBoundaries)
+		return parseRefBoundary(revisionBoundaries), nil
 	} else {
-		currentRev, _ := shell.Execute(fmt.Sprintf("git rev-parse %s", currentBranch))
+		currentRev, err := shell.Execute(fmt.Sprintf("git rev-parse %s", currentBranch))
+		if err != nil {
+			return "", err
+		}
+
 		cleanCurrentRev := strings.TrimSuffix(currentRev, "\n")
-		return cleanCurrentRev
+		return cleanCurrentRev, nil
 	}
 }
 

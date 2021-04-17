@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
@@ -14,35 +13,16 @@ import (
 )
 
 func TestPortalPullSaga(t *testing.T) {
-	rootDirectory := t.TempDir()
-
-	SetupBareGitRepository(t, rootDirectory)
-
-	clone1Path := CloneRepository(t, rootDirectory, "clone1")
-
-	check(os.Chdir(rootDirectory))
-	check(os.Chdir(CloneRepository(t, rootDirectory, "clone2")))
-	fileName := "foo"
-	fileHandle, err := os.Create(fileName)
-	check(err)
-	defer fileHandle.Close()
-
-	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	pushSteps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
-	pushSaga := saga.New(pushSteps)
-	errors := pushSaga.Run()
-	assert.Empty(t, errors)
+	fileName := "foo"
 
-	remoteTrackingBranch := git.GetRemoteTrackingBranch()
-	currentBranch := git.GetCurrentBranch()
-	sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
-
-	check(os.Chdir(clone1Path))
-	git.Fetch()
-	pullSteps := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
+	currentBranch, sha := push(t, portalBranch, fileName)
+	pullSteps, err := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
+	if err != nil {
+		t.FailNow()
+	}
 	pullSaga := saga.New(pullSteps)
-	errors = pullSaga.Run()
+	errors := pullSaga.Run()
 
 	assert.Empty(t, errors)
 	assert.FileExists(t, fileName)
@@ -52,20 +32,26 @@ func TestPortalPullSaga(t *testing.T) {
 }
 
 func TestPortalPullSagaWithFailures(t *testing.T) {
-	now := time.Now().Format(time.RFC3339)
 	portalBranch := "pa-ir-portal"
-	pullSteps := PullSagaSteps(context.TODO(), "", "", "", false)
+	fileName := "foo"
+
+	currentBranch, sha := push(t, portalBranch, fileName)
+
+	pullSteps, err := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
+	if err != nil {
+		t.FailNow()
+	}
 
 	for i := 1; i < len(pullSteps); i++ {
 		fmt.Printf("test run %d:", i)
 		fmt.Println()
 		fmt.Println("-----------------")
 
-		testPortalPullSagaFailure(t, portalBranch, now, i)
+		testPortalPullSagaFailure(t, portalBranch, i)
 	}
 }
 
-func testPortalPullSagaFailure(t *testing.T, portalBranch string, now string, index int) {
+func testPortalPullSagaFailure(t *testing.T, portalBranch string, index int) {
 	rootDirectory := t.TempDir()
 
 	SetupBareGitRepository(t, rootDirectory)
@@ -79,18 +65,24 @@ func testPortalPullSagaFailure(t *testing.T, portalBranch string, now string, in
 	check(err)
 	defer fileHandle.Close()
 
-	pushSteps := PushSagaSteps(context.TODO(), portalBranch, now, "v1.0.0", false)
+	pushSteps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	if err != nil {
+		t.FailNow()
+	}
 	pushSaga := saga.New(pushSteps)
 	errs := pushSaga.Run()
 	assert.Empty(t, errs)
 
-	remoteTrackingBranch := git.GetRemoteTrackingBranch()
-	currentBranch := git.GetCurrentBranch()
-	sha := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+	remoteTrackingBranch, _ := git.GetRemoteTrackingBranch()
+	currentBranch, _ := git.GetCurrentBranch()
+	sha, _ := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
 
 	check(os.Chdir(clone1Path))
 	git.Fetch()
-	pullSteps := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
+	pullSteps, _ := PullSagaSteps(context.TODO(), currentBranch, portalBranch, sha, false)
+	if err != nil {
+		t.FailNow()
+	}
 	pullSteps = pullSteps[0 : len(pullSteps)-index]
 	stepsWithError := append(pullSteps, saga.Step{
 		Name: "Boom!",
@@ -106,4 +98,44 @@ func testPortalPullSagaFailure(t *testing.T, portalBranch string, now string, in
 	assert.True(t, RemoteBranchExists(t, portalBranch))
 	assert.False(t, LocalBranchExists(t, portalBranch))
 	assert.True(t, CleanIndex(t))
+}
+
+func push(t *testing.T, portalBranch string, fileName string) (string, string) {
+	rootDirectory := t.TempDir()
+
+	SetupBareGitRepository(t, rootDirectory)
+
+	clone1Path := CloneRepository(t, rootDirectory, "clone1")
+
+	check(os.Chdir(rootDirectory))
+	check(os.Chdir(CloneRepository(t, rootDirectory, "clone2")))
+	fileHandle, err := os.Create(fileName)
+	check(err)
+	defer fileHandle.Close()
+
+	pushSteps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	if err != nil {
+		t.FailNow()
+	}
+	pushSaga := saga.New(pushSteps)
+	errors := pushSaga.Run()
+	assert.Empty(t, errors)
+
+	remoteTrackingBranch, err := git.GetRemoteTrackingBranch()
+	if err != nil {
+		t.FailNow()
+	}
+	currentBranch, err := git.GetCurrentBranch()
+	if err != nil {
+		t.FailNow()
+	}
+	sha, err := git.GetBoundarySha(remoteTrackingBranch, currentBranch)
+	if err != nil {
+		t.FailNow()
+	}
+
+	check(os.Chdir(clone1Path))
+	git.Fetch()
+
+	return currentBranch, sha
 }
