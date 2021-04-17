@@ -56,24 +56,9 @@ func main() {
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
 			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
 
-			ctx, cancel := context.WithCancel(context.Background())
-			signalChan := make(chan os.Signal, 1)
-			signal.Notify(signalChan, os.Interrupt)
-
-			defer func() {
-				signal.Stop(signalChan)
-				cancel()
-			}()
-
-			go func() {
-				select {
-				case <-signalChan:
-					cancel()
-				case <-ctx.Done():
-				}
-				<-signalChan
-				os.Exit(exitCodeInterrupt)
-			}()
+			ctx, cancel, signalChan := cancelContext()
+			defer stop(cancel, signalChan)
+			go handleCancel(ctx, cancel, signalChan)
 
 			pushSteps, err := portal.PushSagaSteps(ctx, portalBranch, version, verbose)
 			if err != nil {
@@ -136,24 +121,9 @@ func main() {
 			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
 			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
 
-			ctx, cancel := context.WithCancel(context.Background())
-			signalChan := make(chan os.Signal, 1)
-			signal.Notify(signalChan, os.Interrupt)
-
-			defer func() {
-				signal.Stop(signalChan)
-				cancel()
-			}()
-
-			go func() {
-				select {
-				case <-signalChan:
-					cancel()
-				case <-ctx.Done():
-				}
-				<-signalChan
-				os.Exit(exitCodeInterrupt)
-			}()
+			ctx, cancel, signalChan := cancelContext()
+			defer stop(cancel, signalChan)
+			go handleCancel(ctx, cancel, signalChan)
 
 			pullSteps, err := portal.PullSagaSteps(ctx, startingBranch, portalBranch, sha, verbose)
 			if err != nil {
@@ -199,4 +169,27 @@ func validate(valid bool, message string) {
 		fmt.Println(message)
 		os.Exit(1)
 	}
+}
+
+func cancelContext() (context.Context, context.CancelFunc, chan os.Signal) {
+	ctx, cancel := context.WithCancel(context.Background())
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+
+	return ctx, cancel, signalChan
+}
+
+func stop(cancel context.CancelFunc, signalChan chan os.Signal) {
+	signal.Stop(signalChan)
+	cancel()
+}
+
+func handleCancel(ctx context.Context, cancel context.CancelFunc, signalChan chan os.Signal) {
+	select {
+	case <-signalChan:
+		cancel()
+	case <-ctx.Done():
+	}
+	<-signalChan
+	os.Exit(exitCodeInterrupt)
 }
