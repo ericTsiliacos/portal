@@ -44,6 +44,10 @@ Options
  -s, --strategy     git-duet, git-together (default: auto)
  -v, --verbose      verbose output (default: false)
 ```
+
+### Logs
+
+`~/.portal/Logs/info.log`
   
 ### Supports
 - [git-duet](https://github.com/git-duet/git-duet)
@@ -63,4 +67,4 @@ Bats is a bash testing framework, used here for integration tests. This can be i
 
 ## Credit 
 
-Initial idea: George Dean ([@gdean123](https://github.com/gdean123))
+Idea: George Dean ([@gdean123](https://github.com/gdean123))
