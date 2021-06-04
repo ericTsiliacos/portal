@@ -14,7 +14,7 @@ email_addresses:
 EOM
   git add .
   git commit -am "Add .git-author"
-  git push origin master
+  git push origin main
   popd || exit
 
   pushd "$2" || exit

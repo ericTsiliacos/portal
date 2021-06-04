@@ -9,7 +9,7 @@ add_git_together() {
   git config --file .git-together --add git-together.authors.op 'Other Person; operson'
   git add .
   git commit -am "Add .git-together"
-  git push origin master
+  git push origin main
   popd || exit
 
   pushd "$2" || exit

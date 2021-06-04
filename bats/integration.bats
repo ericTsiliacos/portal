@@ -237,7 +237,7 @@ push_validation() {
     cd clone1
     touch foo.text
     git checkout -b portal-fp-op
-    git checkout master
+    git checkout main
 
     run test_portal push
     assert_failure
@@ -256,7 +256,7 @@ push_validation() {
     git commit -m "WIP"
     git push -u origin portal-fp-op
 
-    git checkout master
+    git checkout main
     git branch -D portal-fp-op
     touch bar.text
 
@@ -330,7 +330,7 @@ pull_validation() {
     run test_portal pull
 
     assert_failure
-    assert_output "master: git index dirty!"
+    assert_output "main: git index dirty!"
   }
 
   @test "pull: validate clean index" {
@@ -349,7 +349,7 @@ pull_validation() {
     run test_portal pull
 
     assert_failure
-    assert_output "master: git index dirty!"
+    assert_output "main: git index dirty!"
   }
 
   @test "pull: validate existent remote branch" {
@@ -421,7 +421,7 @@ pull_validation() {
 
     run test_portal pull
     assert_failure
-    assert_output "Starting branch another_branch did not match target branch master"
+    assert_output "Starting branch another_branch did not match target branch main"
   }
 }
 
