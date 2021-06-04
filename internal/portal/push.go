@@ -6,6 +6,7 @@ import (
 
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
+	"github.com/ericTsiliacos/portal/internal/shell"
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,10 +30,10 @@ func PushSagaSteps(ctx context.Context, portalBranch string, version string, ver
 		{
 			Name: "git add .",
 			Run: func() (err error) {
-				return Run(exec.CommandContext(ctx, "git", "add", "."), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "add", "."), verbose)
 			},
 			Undo: func() (err error) {
-				return Run(exec.Command("git", "reset"), verbose)
+				return shell.Run(exec.Command("git", "reset"), verbose)
 			},
 		},
 		{
@@ -48,23 +49,23 @@ func PushSagaSteps(ctx context.Context, portalBranch string, version string, ver
 					return err
 				}
 
-				return Run(exec.CommandContext(ctx, "git", "commit", "--allow-empty", "-m", string(data)), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "commit", "--allow-empty", "-m", string(data)), verbose)
 			},
 			Undo: func() (err error) {
-				return Run(exec.Command("git", "reset", "HEAD^"), verbose)
+				return shell.Run(exec.Command("git", "reset", "HEAD^"), verbose)
 			},
 		},
 		{
 			Name: "git checkout portal branch",
 			Run: func() (err error) {
-				return Run(exec.CommandContext(ctx, "git", "checkout", "-b", portalBranch, "--progress"), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "checkout", "-b", portalBranch, "--progress"), verbose)
 			},
 			Undo: func() (err error) {
-				if err = Run(exec.Command("git", "checkout", currentBranch, "--progress"), verbose); err != nil {
+				if err = shell.Run(exec.Command("git", "checkout", currentBranch, "--progress"), verbose); err != nil {
 					return
 				}
 
-				if err = Run(exec.Command("git", "branch", "-D", portalBranch), verbose); err != nil {
+				if err = shell.Run(exec.Command("git", "branch", "-D", portalBranch), verbose); err != nil {
 					return
 				}
 
@@ -74,31 +75,31 @@ func PushSagaSteps(ctx context.Context, portalBranch string, version string, ver
 		{
 			Name: "git push portal branch",
 			Run: func() (err error) {
-				return Run(exec.CommandContext(ctx, "git", "push", "origin", portalBranch, "--progress"), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "push", "origin", portalBranch, "--progress"), verbose)
 			},
 			Undo: func() (err error) {
-				return Run(exec.Command("git", "push", "origin", "--delete", portalBranch, "--progress"), verbose)
+				return shell.Run(exec.Command("git", "push", "origin", "--delete", portalBranch, "--progress"), verbose)
 			},
 		},
 		{
 			Name: "git checkout to original branch",
 			Run: func() (err error) {
-				return Run(exec.CommandContext(ctx, "git", "checkout", "-", "--progress"), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "checkout", "-", "--progress"), verbose)
 			},
 		},
 		{
 			Name: "delete local portal branch",
 			Run: func() (err error) {
-				return Run(exec.CommandContext(ctx, "git", "branch", "-D", portalBranch), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "branch", "-D", portalBranch), verbose)
 			},
 			Undo: func() (err error) {
-				return Run(exec.Command("git", "checkout", "-b", portalBranch, "--progress"), verbose)
+				return shell.Run(exec.Command("git", "checkout", "-b", portalBranch, "--progress"), verbose)
 			},
 		},
 		{
 			Name: "clear git workspace",
 			Run: func() (err error) {
-				return Run(exec.CommandContext(ctx, "git", "reset", "--hard", remoteTrackingBranch), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "reset", "--hard", remoteTrackingBranch), verbose)
 			},
 		},
 	}, nil
