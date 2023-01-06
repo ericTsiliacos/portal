@@ -17,7 +17,7 @@ func TestPortalPushSaga(t *testing.T) {
 
 	pushSetup(t, fileName)
 
-	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false, "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -36,7 +36,7 @@ func TestPortalPushSagaWithFailures(t *testing.T) {
 	portalBranch := "pa-ir-portal"
 
 	pushSetup(t, fileName)
-	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false, "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -62,7 +62,7 @@ func testPortalPushSagaFailure(t *testing.T, portalBranch string, index int) {
 	check(err)
 	defer fileHandle.Close()
 
-	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false)
+	steps, err := PushSagaSteps(context.TODO(), portalBranch, "v1.0.0", false, "")
 	if err != nil {
 		t.FailNow()
 	}

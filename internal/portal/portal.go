@@ -14,6 +14,7 @@ type Meta struct {
 		Version       string `yaml:"version"`
 		WorkingBranch string `yaml:"workingBranch"`
 		Sha           string `yaml:"sha"`
+		MsgPostfix	  string `yaml:"msgPostfix"`
 	} `yaml:"Meta"`
 }
 
