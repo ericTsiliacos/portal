@@ -26,5 +26,5 @@ func getAuthorsBranch(authors []string) string {
 }
 
 func prefixPortal(branchName string) string {
-	return "portal-" + branchName
+	return "tmp/portal/" + branchName
 }

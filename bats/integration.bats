@@ -45,7 +45,7 @@ load './test_helpers/portal.bash'
   PORTAL_COMMIT_MESSAGE="message goes here" run test_portal push
   assert_success
 
-  run git log origin/portal-fp-op --format=%B -n 1
+  run git log origin/tmp/portal/fp-op --format=%B -n 1
 
   assert_output -p "message goes here"
   popd || exit
@@ -256,12 +256,12 @@ push_validation() {
 
     cd clone1
     touch foo.text
-    git checkout -b portal-fp-op
+    git checkout -b tmp/portal/fp-op
     git checkout main
 
     run test_portal push
     assert_failure
-    assert_output "local branch portal-fp-op already exists"
+    assert_output "local branch tmp/portal/fp-op already exists"
   }
 
   @test "push: validate nonexistent remote branch" {
@@ -271,19 +271,19 @@ push_validation() {
 
     cd clone1
     touch foo.text
-    git checkout -b portal-fp-op
+    git checkout -b tmp/portal/fp-op
     git add .
     git commit -m "WIP"
-    git push -u origin portal-fp-op
+    git push -u origin tmp/portal/fp-op
 
     git checkout main
-    git branch -D portal-fp-op
+    git branch -D tmp/portal/fp-op
     touch bar.text
 
     run test_portal push
 
     assert_failure
-    assert_output "remote branch portal-fp-op already exists"
+    assert_output "remote branch tmp/portal/fp-op already exists"
   }
 }
 
