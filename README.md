@@ -47,9 +47,8 @@ Options
 
 ### Environment Variables
 
-Setting `PORTAL_COMMIT_MESSAGE` to a string will add to the commit message that portal create
-in the case that there exists git commit message hooks
-that need satisfying
+Setting `PORTAL_COMMIT_MESSAGE` to a string of your choice will add to the commit message that portal creates
+if there exists git commit message hooks that need satisfying
 
 e.g. ```export PORTAL_COMMIT_MESSAGE="<message goes here>"```
 
