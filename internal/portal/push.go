@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func PushSagaSteps(ctx context.Context, portalBranch string, version string, verbose bool, msgPostfix string) (steps []saga.Step, err error) {
+func PushSagaSteps(ctx context.Context, portalBranch string, version string, verbose bool, commitMessage string) (steps []saga.Step, err error) {
 	remoteTrackingBranch, err := git.GetRemoteTrackingBranch()
 	if err != nil {
 		return
@@ -43,7 +43,7 @@ func PushSagaSteps(ctx context.Context, portalBranch string, version string, ver
 				config.Meta.WorkingBranch = currentBranch
 				config.Meta.Sha = sha
 				config.Meta.Version = version
-				config.Meta.MsgPostfix = msgPostfix
+				config.Meta.Message = commitMessage
 
 				data, marshalError := yaml.Marshal(&config)
 				if marshalError != nil {

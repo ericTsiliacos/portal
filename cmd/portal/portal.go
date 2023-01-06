@@ -41,7 +41,7 @@ func main() {
 
 			logger.LogInfo.Println(fmt.Sprintf("Portal: %s", version))
 
-			msgPostfix := os.Getenv("PORTAL_MSG_POSTFIX")
+			commitMessage := os.Getenv("PORTAL_COMMIT_MESSAGE")
 
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
@@ -62,7 +62,7 @@ func main() {
 			defer stop(cancel, signalChan)
 			go handleCancel(ctx, cancel, signalChan)
 
-			pushSteps, err := portal.PushSagaSteps(ctx, portalBranch, version, verbose, msgPostfix)
+			pushSteps, err := portal.PushSagaSteps(ctx, portalBranch, version, verbose, commitMessage)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)

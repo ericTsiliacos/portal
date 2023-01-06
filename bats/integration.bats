@@ -33,7 +33,7 @@ load './test_helpers/portal.bash'
   portal_pull "clone1"
 }
 
-@test "support adding postfix message to portal commit message" {
+@test "support adding message to the portal commit message" {
   add_git_together "clone1" "clone2"
   git_together "clone1"
   git_together "clone2"
@@ -42,12 +42,12 @@ load './test_helpers/portal.bash'
 
   touch foo.text
 
-  PORTAL_MSG_POSTFIX="[something][else]" run test_portal push
+  PORTAL_COMMIT_MESSAGE="message goes here" run test_portal push
   assert_success
 
   run git log origin/portal-fp-op --format=%B -n 1
 
-  assert_output -p "[something][else]"
+  assert_output -p "message goes here"
   popd || exit
 
   portal_pull "clone1"

@@ -45,6 +45,14 @@ Options
  -v, --verbose      verbose output (default: false)
 ```
 
+### Environment Variables
+
+Setting `PORTAL_COMMIT_MESSAGE` to a string will add to the commit message that portal create
+in the case that there exists git commit message hooks
+that need satisfying
+
+e.g. ```export PORTAL_COMMIT_MESSAGE="<message goes here>"```
+
 ### Logs
 
 `~/.portal/Logs/info.log`
