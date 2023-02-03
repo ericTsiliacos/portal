@@ -33,6 +33,37 @@ load './test_helpers/portal.bash'
   portal_pull "clone1"
 }
 
+@test "portal push/pull from different directory levels" {
+  add_git_together "clone1" "clone2"
+  git_together "clone1"
+  git_together "clone2"
+
+  pushd clone1
+
+  mkdir tmp
+  touch tmp/bar.text
+  git add .
+  git commit -m "create additional directory structure"
+  git push origin head
+
+  touch tmp/foo.text
+  cd tmp
+  run test_portal push
+  assert_success
+
+  popd
+
+  pushd clone2
+  git pull -r
+  cd tmp
+
+  run test_portal pull
+  assert_success
+
+  run git status --porcelain=v1
+  assert_output "?? tmp/foo.text"
+}
+
 @test "support adding message to the portal commit message" {
   add_git_together "clone1" "clone2"
   git_together "clone1"
@@ -77,7 +108,6 @@ load './test_helpers/portal.bash'
   run git cherry -v
   assert_output -p "work in progress"
   assert_file_exist bar.text
-
 }
 
 @test "push/pull: when puller is ahead of pusher against remote" {
@@ -191,7 +221,7 @@ load './test_helpers/portal.bash'
 }
 
 push_validation() {
-  @test "push: validate current working directory is root of git project" {
+  @test "push: validate current working directory is inside a working git tree" {
     add_git_duet "clone1" "clone2"
     git_duet "clone1"
     git_duet "clone2"
@@ -201,9 +231,15 @@ push_validation() {
     cd tmp 
     touch bar.text
     run test_portal push
+    assert_success
+    popd
+
+    mkdir non_git_project
+    cd non_git_project
+    run test_portal push
 
     assert_failure
-    assert_output "current working directory must be root of git project"
+    assert_output "not a git project"
   }
 
   @test "push: validate dirty workspace" {
@@ -288,7 +324,7 @@ push_validation() {
 }
 
 pull_validation() {
-   @test "pull: validate current working directory is root of git project" {
+   @test "pull: validate current working directory is inside a working git tree" {
     add_git_duet "clone1" "clone2"
     git_duet "clone1"
     git_duet "clone2"
@@ -309,9 +345,15 @@ pull_validation() {
     git pull --rebase
     cd tmp
     run test_portal pull
+    assert_success
+    popd
+
+    mkdir non_git_project
+    cd non_git_project
+    run test_portal push
 
     assert_failure
-    assert_output "current working directory must be root of git project"
+    assert_output "not a git project"
   }
 
   @test "pull: validate current branch is remotely tracked" {

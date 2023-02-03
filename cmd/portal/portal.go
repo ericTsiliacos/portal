@@ -46,13 +46,14 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
+			validate(git.IsGitProject(), constants.GIT_PROJECT)
+
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
-			validate(git.CurrentWorkingDirectoryGitRoot(), constants.GIT_ROOT)
 			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
 			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
 			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
@@ -94,13 +95,14 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
+			validate(git.IsGitProject(), constants.GIT_PROJECT)
+
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
-			validate(git.CurrentWorkingDirectoryGitRoot(), constants.GIT_ROOT)
 			validate(git.RemoteBranchExists(portalBranch), constants.PORTAL_CLOSED)
 
 			_, _ = git.Fetch()
