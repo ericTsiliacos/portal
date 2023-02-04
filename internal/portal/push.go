@@ -28,9 +28,9 @@ func PushSagaSteps(ctx context.Context, portalBranch string, version string, ver
 
 	return []saga.Step{
 		{
-			Name: "git add .",
+			Name: "git add -A",
 			Run: func() (err error) {
-				return shell.Run(exec.CommandContext(ctx, "git", "add", "."), verbose)
+				return shell.Run(exec.CommandContext(ctx, "git", "add", "--all"), verbose)
 			},
 			Undo: func() (err error) {
 				return shell.Run(exec.Command("git", "reset"), verbose)

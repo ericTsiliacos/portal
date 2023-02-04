@@ -54,7 +54,7 @@ func PullSagaSteps(ctx context.Context, startingBranch string, portalBranch stri
 				return shell.Run(exec.CommandContext(ctx, "git", "reset", "HEAD^"), verbose)
 			},
 			Undo: func() (err error) {
-				return shell.Run(exec.Command("git", "add", "."), verbose)
+				return shell.Run(exec.Command("git", "add", "--all"), verbose)
 			},
 		},
 		{

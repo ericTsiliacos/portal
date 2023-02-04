@@ -46,10 +46,12 @@ load './test_helpers/portal.bash'
   git commit -m "create additional directory structure"
   git push origin head
 
-  touch tmp/foo.text
+  touch foo.text
   cd tmp
   run test_portal push
   assert_success
+  run git status --porcelain=v1
+  assert_output ""
 
   popd
 
@@ -60,8 +62,8 @@ load './test_helpers/portal.bash'
   run test_portal pull
   assert_success
 
-  run git status --porcelain=v1
-  assert_output "?? tmp/foo.text"
+  run git status
+  assert_output -p "../foo.text"
 }
 
 @test "support adding message to the portal commit message" {
