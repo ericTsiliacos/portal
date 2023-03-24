@@ -7,8 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ericTsiliacos/portal/internal/saga"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ericTsiliacos/portal/internal/saga"
 )
 
 func TestPortalPushSaga(t *testing.T) {

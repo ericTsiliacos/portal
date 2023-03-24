@@ -7,9 +7,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestPortalPullSaga(t *testing.T) {

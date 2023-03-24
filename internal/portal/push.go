@@ -4,10 +4,11 @@ import (
 	"context"
 	"os/exec"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/saga"
 	"github.com/ericTsiliacos/portal/internal/shell"
-	"gopkg.in/yaml.v2"
 )
 
 func PushSagaSteps(ctx context.Context, portalBranch string, version string, verbose bool, commitMessage string) (steps []saga.Step, err error) {

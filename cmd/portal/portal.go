@@ -8,13 +8,14 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/thatisuday/commando"
+	"golang.org/x/mod/semver"
+
 	"github.com/ericTsiliacos/portal/internal/constants"
 	"github.com/ericTsiliacos/portal/internal/git"
 	"github.com/ericTsiliacos/portal/internal/logger"
 	"github.com/ericTsiliacos/portal/internal/portal"
 	"github.com/ericTsiliacos/portal/internal/saga"
-	"github.com/thatisuday/commando"
-	"golang.org/x/mod/semver"
 )
 
 var version string
@@ -46,7 +47,7 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			validate(git.IsGitProject(), constants.GIT_PROJECT)
+			validate(git.IsGitProject(), constants.GitProject)
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
@@ -54,10 +55,10 @@ func main() {
 				os.Exit(1)
 			}
 
-			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EMPTY_INDEX)
-			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
-			validate(!git.LocalBranchExists(portalBranch), constants.LOCAL_BRANCH_EXISTS(portalBranch))
-			validate(!git.RemoteBranchExists(portalBranch), constants.REMOTE_BRANCH_EXISTS(portalBranch))
+			validate(git.DirtyIndex() || git.UnpublishedWork(), constants.EmptyIndex)
+			validate(git.CurrentBranchRemotelyTracked(), constants.RemoteTrackingRequired)
+			validate(!git.LocalBranchExists(portalBranch), constants.LocalBranchExists(portalBranch))
+			validate(!git.RemoteBranchExists(portalBranch), constants.RemoteBranchExists(portalBranch))
 
 			ctx, cancel, signalChan := cancelContext()
 			defer stop(cancel, signalChan)
@@ -95,7 +96,7 @@ func main() {
 			verbose, _ := flags["verbose"].GetBool()
 			strategy, _ := flags["strategy"].GetString()
 
-			validate(git.IsGitProject(), constants.GIT_PROJECT)
+			validate(git.IsGitProject(), constants.GitProject)
 
 			portalBranch, err := portal.BranchNameStrategy(strategy)
 			if err != nil {
@@ -103,7 +104,7 @@ func main() {
 				os.Exit(1)
 			}
 
-			validate(git.RemoteBranchExists(portalBranch), constants.PORTAL_CLOSED)
+			validate(git.RemoteBranchExists(portalBranch), constants.PortalClosed)
 
 			_, _ = git.Fetch()
 
@@ -114,16 +115,16 @@ func main() {
 			sha := config.Meta.Sha
 			pullerVersion := semver.Canonical(version)
 
-			validate(semver.Major(pusherVersion) == semver.Major(pullerVersion), constants.DIFFERENT_VERSIONS)
-			validate(git.CurrentBranchRemotelyTracked(), constants.REMOTE_TRACKING_REQUIRED)
+			validate(semver.Major(pusherVersion) == semver.Major(pullerVersion), constants.DifferentVersions)
+			validate(git.CurrentBranchRemotelyTracked(), constants.RemoteTrackingRequired)
 			startingBranch, err := git.GetCurrentBranch()
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				os.Exit(1)
 			}
 
-			validate(workingBranch == startingBranch, constants.BRANCH_MISMATCH(startingBranch, workingBranch))
-			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DIRTY_INDEX(startingBranch))
+			validate(workingBranch == startingBranch, constants.BranchMismatch(startingBranch, workingBranch))
+			validate(!git.DirtyIndex() && !git.UnpublishedWork(), constants.DirtyIndex(startingBranch))
 
 			ctx, cancel, signalChan := cancelContext()
 			defer stop(cancel, signalChan)

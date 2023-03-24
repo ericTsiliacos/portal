@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ericTsiliacos/portal/internal/portal/strategies"
 	"gopkg.in/yaml.v2"
+
+	"github.com/ericTsiliacos/portal/internal/portal/strategies"
 )
 
 type Meta struct {
@@ -14,7 +15,7 @@ type Meta struct {
 		Version       string `yaml:"version"`
 		WorkingBranch string `yaml:"workingBranch"`
 		Sha           string `yaml:"sha"`
-		Message	  	  string `yaml:"message"`
+		Message       string `yaml:"message"`
 	} `yaml:"Meta"`
 }
 
